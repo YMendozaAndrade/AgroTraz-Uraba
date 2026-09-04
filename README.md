@@ -43,7 +43,7 @@ AgroTraz Urabá resuelve estos problemas con un sistema híbrido **Offline-First
 | Capa | Tecnología |
 |------|------------|
 | API / Backend | Node.js (v18+) o ASP.NET Core 8 |
-| Base de datos | PostgreSQL 15+ con PostGIS (o MySQL 8.0+ espacial) |
+| Base de datos | MySQL 8.0 |
 | App móvil | Android 10+ (offline-first, SQLite/IndexedDB, Service Worker) |
 | Impresión | Etiquetas térmicas ZPL/EPL vía Bluetooth o LAN |
 | Reportes | PDF y Excel (ICA / GlobalG.A.P.) |
