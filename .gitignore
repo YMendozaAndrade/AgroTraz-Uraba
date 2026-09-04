@@ -1,0 +1,12 @@
+# Exclusiones de Frontend
+**/Frontend/node_modules/
+**/Frontend/dist/
+**/Frontend/build/
+
+# Exclusiones de Backend (.NET / C#)
+**/Backend/bin/
+**/Backend/obj/
+**/Backend/out/
+
+# Archivos de entorno / llaves
+*.env
