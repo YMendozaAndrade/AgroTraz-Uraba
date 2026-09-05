@@ -3,10 +3,9 @@
 **/Frontend/dist/
 **/Frontend/build/
 
-# Exclusiones de Backend (.NET / C#)
-**/Backend/bin/
-**/Backend/obj/
-**/Backend/out/
+# Exclusiones de Backend (Node.js)
+**/Backend/node_modules/
 
 # Archivos de entorno / llaves
 *.env
+.env.local

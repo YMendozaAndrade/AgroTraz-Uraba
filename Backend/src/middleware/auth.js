@@ -1,0 +1,36 @@
+const jwt = require('jsonwebtoken');
+
+function generarToken(usuario) {
+  return jwt.sign(
+    { id_usuario: usuario.id_usuario, rol: usuario.rol, nombre: usuario.nombre },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+  );
+}
+
+function verificarToken(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ status: 'error', message: 'Token no proporcionado' });
+  }
+  try {
+    req.usuario = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    next();
+  } catch (err) {
+    return res.status(401).json({ status: 'error', message: 'Token inválido o expirado' });
+  }
+}
+
+function requiereRol(...roles) {
+  return (req, res, next) => {
+    if (!req.usuario) {
+      return res.status(401).json({ status: 'error', message: 'No autenticado' });
+    }
+    if (!roles.includes(req.usuario.rol)) {
+      return res.status(403).json({ status: 'error', message: 'Sin permisos para esta acción' });
+    }
+    next();
+  };
+}
+
+module.exports = { generarToken, verificarToken, requiereRol };

@@ -52,7 +52,7 @@ AgroTraz Urabá resuelve estos problemas con un sistema híbrido **Offline-First
 
 ```
 App_AgroTraz/
-├── Backend/          # API y lógica de negocio
+├── Backend/          # API y lógica
 ├── Frontend/         # Aplicación web
 ├── docs/             # Documentación y análisis del proyecto
 └── README.md
