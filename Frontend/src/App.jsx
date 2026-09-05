@@ -4,9 +4,11 @@ import Registro from './auth/Registro';
 import Dashboard from './pages/Dashboard';
 import Fincas from './pages/Fincas';
 import Lotes from './pages/Lotes';
-import EnConstruccion from './pages/EnConstruccion';
 import Agroquimicos from './pages/Agroquimicos';
 import Aplicaciones from './pages/Aplicaciones';
+import Evaluaciones from './pages/Evaluaciones';
+import OrdenesCorte from './pages/OrdenesCorte';
+import QrCajas from './pages/QrCajas';
 import RutaProtegida from './app/RutaProtegida';
 
 function App() {
@@ -38,11 +40,11 @@ function App() {
           </RutaProtegida>
         }
       />
-      <Route path="/evaluaciones" element={<RutaProtegida><EnConstruccion titulo="Evaluaciones fitosanitarias" /></RutaProtegida>} />
+      <Route path="/evaluaciones" element={<RutaProtegida><Evaluaciones /></RutaProtegida>} />
       <Route path="/agroquimicos" element={<RutaProtegida><Agroquimicos /></RutaProtegida>} />
       <Route path="/aplicaciones" element={<RutaProtegida><Aplicaciones /></RutaProtegida>} />
-      <Route path="/ordenes-corte" element={<RutaProtegida><EnConstruccion titulo="Órdenes de corte" /></RutaProtegida>} />
-      <Route path="/qr" element={<RutaProtegida><EnConstruccion titulo="QR / Cajas" /></RutaProtegida>} />
+      <Route path="/ordenes-corte" element={<RutaProtegida><OrdenesCorte /></RutaProtegida>} />
+      <Route path="/qr" element={<RutaProtegida><QrCajas /></RutaProtegida>} />
     </Routes>
   );
 }

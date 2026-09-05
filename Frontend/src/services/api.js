@@ -69,3 +69,29 @@ export const aplicacionesApi = {
   actualizar: (id, aplicacion) => request(`/aplicaciones/${id}`, 'PUT', aplicacion),
   eliminar: (id) => request(`/aplicaciones/${id}`, 'DELETE')
 };
+
+export const ordenesCorteApi = {
+  listar: () => request('/ordenes-corte'),
+  crear: (orden) => request('/ordenes-corte', 'POST', orden),
+  actualizar: (id, orden) => request(`/ordenes-corte/${id}`, 'PUT', orden),
+  eliminar: (id) => request(`/ordenes-corte/${id}`, 'DELETE')
+};
+
+export const evaluacionesApi = {
+  listar: () => request('/evaluaciones'),
+  crear: (evaluacion) => request('/evaluaciones', 'POST', evaluacion),
+  actualizar: (id, evaluacion) => request(`/evaluaciones/${id}`, 'PUT', evaluacion),
+  eliminar: (id) => request(`/evaluaciones/${id}`, 'DELETE')
+};
+
+export const qrCajasApi = {
+  listar: () => request('/qr'),
+  crear: (qr) => request('/qr', 'POST', qr),
+  actualizar: (id, qr) => request(`/qr/${id}`, 'PUT', qr),
+  eliminar: (id) => request(`/qr/${id}`, 'DELETE'),
+  traza: (codigo) => request(`/qr/traza/${codigo}`),
+  listarCajas: (idQr) => request(`/qr/${idQr}/cajas`),
+  crearCaja: (idQr, caja) => request(`/qr/${idQr}/cajas`, 'POST', caja),
+  actualizarCaja: (idCaja, caja) => request(`/qr/cajas/${idCaja}`, 'PUT', caja),
+  eliminarCaja: (idCaja) => request(`/qr/cajas/${idCaja}`, 'DELETE')
+};
