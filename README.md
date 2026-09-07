@@ -58,10 +58,6 @@ App_AgroTraz/
 └── README.md
 ```
 
-## Documentación
-
-El análisis técnico completo del sistema se encuentra en [`docs/AgroTraz Uraba - Analisis.pdf`](docs/AgroTraz%20Uraba%20-%20Analisis.pdf), que incluye la especificación de casos de uso, prerrequisitos, correquisitos, normatividad (ICA, GlobalG.A.P., Rainforest Alliance) y controles de trazabilidad.
-
 ## Autores
 
 - Yessica Paola Mendoza Andrade

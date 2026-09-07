@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
       `SELECT u.id_usuario, u.nombre, u.email, u.telefono, u.activo, r.nombre AS rol
        FROM usuarios u
        JOIN roles r ON r.id = u.rol_id
+       WHERE u.activo = TRUE
        ORDER BY u.nombre`
     );
     res.json({ status: 'ok', usuarios: rows });

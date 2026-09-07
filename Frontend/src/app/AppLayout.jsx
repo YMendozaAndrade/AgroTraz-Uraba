@@ -1,20 +1,24 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import './app.css';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/fincas', label: 'Fincas' },
-  { to: '/lotes', label: 'Lotes' },
-  { to: '/evaluaciones', label: 'Evaluaciones' },
-  { to: '/agroquimicos', label: 'Agroquímicos' },
-  { to: '/aplicaciones', label: 'Aplicaciones' },
-  { to: '/ordenes-corte', label: 'Órdenes de corte' },
-  { to: '/qr', label: 'QR / Cajas' }
+  { to: '/dashboard', label: 'Inicio', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo', 'operador_empacadora'] },
+  { to: '/fincas', label: 'Fincas', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
+  { to: '/lotes', label: 'Lotes', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
+  { to: '/evaluaciones', label: 'Evaluaciones', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
+  { to: '/agroquimicos', label: 'Agroquímicos', roles: ['administrador', 'gerente', 'agronomo'] },
+  { to: '/aplicaciones', label: 'Aplicaciones', roles: ['administrador', 'gerente', 'agronomo'] },
+  { to: '/ordenes-corte', label: 'Órdenes de corte', roles: ['administrador', 'gerente', 'agronomo'] },
+  { to: '/qr', label: 'QR / Cajas', roles: ['administrador', 'gerente', 'agronomo', 'operador_empacadora'] }
 ];
 
 function AppLayout({ children }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+  const itemsVisibles = NAV_ITEMS.filter((item) => item.roles.includes(usuario.rol));
+  const paginaActual = itemsVisibles.find((item) => item.to === location.pathname)?.label || '';
 
   function handleLogout() {
     localStorage.removeItem('token');
@@ -30,7 +34,7 @@ function AppLayout({ children }) {
           <div>AgroTraz</div>
         </div>
         <nav>
-          {NAV_ITEMS.map((item) => (
+          {itemsVisibles.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -43,7 +47,7 @@ function AppLayout({ children }) {
       </aside>
       <main className="app-main">
         <div className="app-topbar">
-          <h1>Módulo de catastro (RF-01)</h1>
+          <h1>{paginaActual}</h1>
           <div className="app-user">
             <div className="info">
               <div className="nombre">{usuario.nombre}</div>

@@ -21,6 +21,8 @@ function Lotes() {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [error, setError] = useState('');
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const puedeGestionar = ['administrador', 'gerente', 'agronomo'].includes(usuario.rol);
 
   async function cargarTodo() {
     try {
@@ -114,9 +116,11 @@ function Lotes() {
       )}
       <div className="page-head">
         <h2>Lotes registrados</h2>
-        <button className="btn-primary" onClick={abrirCrear}>
-          + Nuevo lote
-        </button>
+        {puedeGestionar && (
+          <button className="btn-primary" onClick={abrirCrear}>
+            + Nuevo lote
+          </button>
+        )}
       </div>
 
       <div className="panel-card">
@@ -136,7 +140,7 @@ function Lotes() {
                   <th>Densidad</th>
                   <th>Estado</th>
                   <th>Activo</th>
-                  <th>Acciones</th>
+                  {puedeGestionar && <th>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -159,14 +163,16 @@ function Lotes() {
                         {l.activo ? 'Sí' : 'No'}
                       </span>
                     </td>
-                    <td>
-                      <button className="action-btn edit" onClick={() => abrirEditar(l)}>
-                        Editar
-                      </button>
-                      <button className="action-btn delete" onClick={() => handleDesactivar(l)}>
-                        Desactivar
-                      </button>
-                    </td>
+                    {puedeGestionar && (
+                      <td>
+                        <button className="action-btn edit" onClick={() => abrirEditar(l)}>
+                          Editar
+                        </button>
+                        <button className="action-btn delete" onClick={() => handleDesactivar(l)}>
+                          Desactivar
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

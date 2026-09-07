@@ -15,6 +15,8 @@ const VACIO = {
 
 function Fincas() {
   const [fincas, setFincas] = useState([]);
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const puedeGestionar = usuario.rol === 'administrador' || usuario.rol === 'gerente';
   const [loading, setLoading] = useState(true);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editar, setEditar] = useState(null);
@@ -25,14 +27,16 @@ function Fincas() {
 
   const [modalUsuarios, setModalUsuarios] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
+  const [usuariosActivos, setUsuariosActivos] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [usuarioSel, setUsuarioSel] = useState('');
   const [usuarioSelError, setUsuarioSelError] = useState('');
 
   async function cargar() {
     try {
-      const data = await fincasApi.listar();
+      const [data, usuariosData] = await Promise.all([fincasApi.listar(), usuariosApi.listar()]);
       setFincas(data.fincas);
+      setUsuariosActivos(usuariosData.usuarios || []);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -171,9 +175,11 @@ function Fincas() {
       )}
       <div className="page-head">
         <h2>Fincas registradas</h2>
-        <button className="btn-primary" onClick={abrirCrear}>
-          + Nueva finca
-        </button>
+        {puedeGestionar && (
+          <button className="btn-primary" onClick={abrirCrear}>
+            + Nueva finca
+          </button>
+        )}
       </div>
 
       <div className="panel-card">
@@ -192,8 +198,12 @@ function Fincas() {
                   <th>Área (ha)</th>
                   <th>Encargado</th>
                   <th>Estado</th>
-                  <th>Usuarios</th>
-                  <th>Acciones</th>
+                  {puedeGestionar && (
+                    <>
+                      <th>Usuarios</th>
+                      <th>Acciones</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -209,19 +219,23 @@ function Fincas() {
                         {f.activo ? 'Activa' : 'Inactiva'}
                       </span>
                     </td>
-                    <td>
-                      <button className="action-btn edit" onClick={() => abrirUsuarios(f)}>
-                        Usuarios
-                      </button>
-                    </td>
-                    <td>
-                      <button className="action-btn edit" onClick={() => abrirEditar(f)}>
-                        Editar
-                      </button>
-                      <button className="action-btn delete" onClick={() => handleDesactivar(f)}>
-                        Desactivar
-                      </button>
-                    </td>
+                    {puedeGestionar && (
+                      <td>
+                        <button className="action-btn edit" onClick={() => abrirUsuarios(f)}>
+                          Usuarios
+                        </button>
+                      </td>
+                    )}
+                    {puedeGestionar && (
+                      <td>
+                        <button className="action-btn edit" onClick={() => abrirEditar(f)}>
+                          Editar
+                        </button>
+                        <button className="action-btn delete" onClick={() => handleDesactivar(f)}>
+                          Desactivar
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -263,7 +277,14 @@ function Fincas() {
                 </div>
                 <div className="form-field-modal full">
                   <label>Encargado responsable</label>
-                  <input name="encargado_responsable" value={form.encargado_responsable} onChange={handleChange} />
+                  <select name="encargado_responsable" value={form.encargado_responsable} onChange={handleChange}>
+                    <option value="">— Seleccione un responsable —</option>
+                    {usuariosActivos.map((u) => (
+                      <option key={u.id_usuario} value={u.nombre}>
+                        {u.nombre} ({u.rol})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-field-modal full">
                   <label>Observaciones</label>

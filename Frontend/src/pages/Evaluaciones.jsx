@@ -22,6 +22,8 @@ function Evaluaciones() {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [error, setError] = useState('');
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const puedeEliminar = usuario.rol === 'administrador' || usuario.rol === 'gerente';
 
   async function cargarTodo() {
     try {
@@ -210,7 +212,9 @@ function Evaluaciones() {
                         <button className="action-btn edit" onClick={() => marcarSincronizada(e)}>Sincronizar</button>
                       )}
                       <button className="action-btn edit" onClick={() => abrirEditar(e)}>Editar</button>
-                      <button className="action-btn delete" onClick={() => handleEliminar(e)}>Eliminar</button>
+                      {puedeEliminar && (
+                        <button className="action-btn delete" onClick={() => handleEliminar(e)}>Eliminar</button>
+                      )}
                     </td>
                   </tr>
                 ))}

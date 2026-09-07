@@ -149,6 +149,125 @@
   font-size: 15px;
 }
 
+.inicio-hero {
+  background: linear-gradient(135deg, #0c4a22, #15803d);
+  color: #fff;
+  border-radius: 16px;
+  padding: 26px 28px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  box-shadow: 0 10px 24px rgba(12, 74, 34, 0.25);
+}
+
+.inicio-hero h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.inicio-fecha {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.inicio-sub {
+  font-size: 14px;
+  opacity: 0.75;
+  max-width: 520px;
+}
+
+.inicio-estado-lotes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inicio-estado-lotes .badge {
+  padding: 6px 12px;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(20, 83, 45, 0.12);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+}
+
+.kpi-value {
+  font-size: 30px;
+  font-weight: 800;
+  color: #15803d;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kpi-label {
+  font-size: 13px;
+  color: #4b7a5a;
+  font-weight: 600;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.quick-card {
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid rgba(20, 83, 45, 0.15);
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.quick-card strong {
+  display: block;
+  color: #14532d;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.quick-card span {
+  display: block;
+  color: #4b7a5a;
+  font-size: 13px;
+}
+
+.quick-card:hover {
+  background: #f0fdf4;
+  border-color: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(22, 163, 74, 0.15);
+}
+
+.inicio-pie {
+  color: #4b7a5a;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 6px;
+}
+
 .traza-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
