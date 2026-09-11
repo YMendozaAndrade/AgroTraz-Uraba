@@ -737,6 +737,22 @@
   cursor: not-allowed;
 }
 
+.btn-loc {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #bcd6c2;
+  background: #eef6ef;
+  color: #22623a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-loc:hover:not(:disabled) { background: #dcefe0; }
+
+.btn-loc:disabled { opacity: 0.6; cursor: wait; }
+
 /* ---------- Alertas ---------- */
 .alert {
   padding: 12px 16px;

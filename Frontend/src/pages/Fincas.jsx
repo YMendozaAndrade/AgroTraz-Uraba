@@ -10,7 +10,9 @@ const VACIO = {
   direccion: '',
   area_hectareas: '',
   encargado_responsable: '',
-  observaciones: ''
+  observaciones: '',
+  latitud: '',
+  longitud: ''
 };
 
 function Fincas() {
@@ -65,10 +67,38 @@ function Fincas() {
       direccion: finca.direccion || '',
       area_hectareas: finca.area_hectareas || '',
       encargado_responsable: finca.encargado_responsable || '',
-      observaciones: finca.observaciones || ''
+      observaciones: finca.observaciones || '',
+      latitud: finca.latitud ?? '',
+      longitud: finca.longitud ?? ''
     });
     setError('');
     setModalAbierto(true);
+  }
+
+  const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
+
+  function usarMiUbicacion() {
+    if (!navigator.geolocation) {
+      setError('Este navegador no soporta geolocalización');
+      return;
+    }
+    setObteniendoUbicacion(true);
+    setError('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((f) => ({
+          ...f,
+          latitud: Number(pos.coords.latitude.toFixed(6)),
+          longitud: Number(pos.coords.longitude.toFixed(6))
+        }));
+        setObteniendoUbicacion(false);
+      },
+      (err) => {
+        setObteniendoUbicacion(false);
+        setError(`No se pudo obtener la ubicación: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
   }
 
   function handleChange(e) {
@@ -196,6 +226,7 @@ function Fincas() {
                   <th>Código ICA</th>
                   <th>Municipio</th>
                   <th>Área (ha)</th>
+                  <th>Ubicación</th>
                   <th>Encargado</th>
                   <th>Estado</th>
                   {puedeGestionar && (
@@ -213,6 +244,7 @@ function Fincas() {
                     <td>{f.codigo_ica}</td>
                     <td>{f.municipio}</td>
                     <td>{Number(f.area_hectareas || 0).toFixed(2)}</td>
+                    <td>{f.latitud != null && f.longitud != null ? `${f.latitud}, ${f.longitud}` : '—'}</td>
                     <td>{f.encargado_responsable}</td>
                     <td>
                       <span className={`badge ${f.activo ? 'badge-activo' : 'badge-inactivo'}`}>
@@ -274,6 +306,26 @@ function Fincas() {
                 <div className="form-field-modal">
                   <label>Área (hectáreas)</label>
                   <input name="area_hectareas" type="number" step="0.01" min="0" value={form.area_hectareas} onChange={handleChange} />
+                </div>
+                <div className="form-field-modal full">
+                  <label>Ubicación (latitud, longitud)</label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input name="latitud" type="number" step="any" value={form.latitud} onChange={handleChange} placeholder="Latitud" />
+                    <input name="longitud" type="number" step="any" value={form.longitud} onChange={handleChange} placeholder="Longitud" />
+                    <button type="button" className="btn-loc" onClick={usarMiUbicacion} disabled={obteniendoUbicacion}>
+                      {obteniendoUbicacion ? 'Obteniendo…' : 'Usar mi ubicación'}
+                    </button>
+                  </div>
+                  {form.latitud !== '' && form.longitud !== '' && (
+                    <a
+                      href={`https://www.google.com/maps?q=${form.latitud},${form.longitud}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: '#166534' }}
+                    >
+                      Ver en el mapa
+                    </a>
+                  )}
                 </div>
                 <div className="form-field-modal full">
                   <label>Encargado responsable</label>
