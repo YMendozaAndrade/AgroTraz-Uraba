@@ -96,3 +96,10 @@ export const qrCajasApi = {
   actualizarCaja: (idCaja, caja) => request(`/qr/cajas/${idCaja}`, 'PUT', caja),
   eliminarCaja: (idCaja) => request(`/qr/cajas/${idCaja}`, 'DELETE')
 };
+
+export const reportesApi = {
+  listar: () => request('/reportes'),
+  guardar: (reporte) => request('/reportes', 'POST', reporte),
+  obtener: (id) => request(`/reportes/${id}`),
+  eliminar: (id) => request(`/reportes/${id}`, 'DELETE')
+};

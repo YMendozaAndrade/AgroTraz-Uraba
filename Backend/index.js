@@ -11,6 +11,7 @@ const aplicacionesRoutes = require('./src/routes/aplicaciones');
 const ordenesCorteRoutes = require('./src/routes/ordenesCorte');
 const evaluacionesRoutes = require('./src/routes/evaluaciones');
 const qrCajasRoutes = require('./src/routes/qrCajas');
+const reportesRoutes = require('./src/routes/reportes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ app.use('/api/aplicaciones', aplicacionesRoutes);
 app.use('/api/ordenes-corte', ordenesCorteRoutes);
 app.use('/api/evaluaciones', evaluacionesRoutes);
 app.use('/api/qr', qrCajasRoutes);
+app.use('/api/reportes', reportesRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'API AgroTraz Uraba' });

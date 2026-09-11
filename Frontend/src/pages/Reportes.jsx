@@ -8,14 +8,16 @@ import {
   ordenesCorteApi,
   qrCajasApi,
   usuariosApi,
-  asignacionesApi
+  asignacionesApi,
+  reportesApi
 } from '../services/api';
 
 const SECCIONES = [
   { id: 'produccion', titulo: 'Producción' },
   { id: 'fitosanitario', titulo: 'Fitosanitario' },
   { id: 'trazabilidad', titulo: 'Trazabilidad' },
-  { id: 'inventario', titulo: 'Inventario campesino' }
+  { id: 'inventario', titulo: 'Inventario campesino' },
+  { id: 'historial', titulo: 'Historial' }
 ];
 
 const ROL_LABEL = {
@@ -29,6 +31,23 @@ const ROL_LABEL = {
 function fechaCorta(f) {
   return (f || '').toString().slice(0, 10);
 }
+
+function fechaLegible(f) {
+  const s = fechaCorta(f);
+  if (!s) return '—';
+  try {
+    return new Date(s + 'T00:00:00').toLocaleDateString('es-CO');
+  } catch {
+    return s;
+  }
+}
+
+const TIPO_REPORTE_LABEL = {
+  produccion: 'Producción',
+  fitosanitario: 'Fitosanitario',
+  trazabilidad: 'Trazabilidad',
+  inventario: 'Inventario campesino'
+};
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
@@ -51,6 +70,42 @@ function Cabecera({ titulo, usuario, global }) {
         Imprimir / Guardar PDF
       </button>
     </div>
+  );
+}
+
+function BotonGuardar({ tipo, titulo, desde, hasta, idFinca, resumen, tablas }) {
+  const [estado, setEstado] = useState('idle');
+  const [mensaje, setMensaje] = useState('');
+
+  async function guardar() {
+    if (estado === 'guardando') return;
+    setEstado('guardando');
+    setMensaje('');
+    try {
+      await reportesApi.guardar({
+        tipo_reporte: tipo,
+        titulo,
+        desde: desde || null,
+        hasta: hasta || null,
+        id_finca: idFinca || null,
+        resumen,
+        detalle: tablas
+      });
+      setEstado('ok');
+      setMensaje('Guardado en el historial');
+    } catch (e) {
+      setEstado('error');
+      setMensaje(e.message);
+    }
+  }
+
+  return (
+    <span className="no-print">
+      <button className="btn-cancel" onClick={guardar} disabled={estado === 'guardando'}>
+        {estado === 'guardando' ? 'Guardando…' : 'Guardar en historial'}
+      </button>
+      {mensaje && <span className="rep-dim"> {mensaje}</span>}
+    </span>
   );
 }
 
@@ -131,6 +186,28 @@ function ReporteProduccion({ datos, filtros, setFiltros, fincas }) {
     porFinca[o.finca].cortes += 1;
   });
 
+  const tablasProduccion = [
+    {
+      titulo: 'Producción por finca',
+      columnas: ['Finca', 'Órdenes de corte', 'QR generados', 'Cajas', 'Peso (kg)'],
+      filas: Object.values(porFinca)
+        .sort((a, b) => b.kg - a.kg)
+        .map((f) => [f.finca, f.cortes, f.qrs, f.cajas, f.kg])
+    },
+    {
+      titulo: 'Detalle de empaque',
+      columnas: ['Fecha', 'Código', 'Finca', 'Lote', 'Peso (kg)', 'Cajas'],
+      filas: qrs.map((q) => [
+        fechaCorta(q.fecha_proceso),
+        q.codigo,
+        q.finca,
+        q.lote,
+        Number(q.peso_neto || 0),
+        q.total_cajas || 0
+      ])
+    }
+  ];
+
   return (
     <Fragment>
       <FiltrosReporte
@@ -140,6 +217,33 @@ function ReporteProduccion({ datos, filtros, setFiltros, fincas }) {
         filtroFinca={filtros.finca}
         setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
       />
+      <div className="page-head no-print">
+        <div>
+          <h2>Reporte de producción</h2>
+          <p className="rep-sub">
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || {}).nombre : 'Todas las fincas'}
+          </p>
+        </div>
+        <div className="page-head-acciones">
+          <BotonGuardar
+            tipo="produccion"
+            titulo={`Reporte de producción ${filtros.desde ? `(${fechaLegible(filtros.desde)} - ${fechaLegible(filtros.hasta)})` : ''}`}
+            desde={filtros.desde}
+            hasta={filtros.hasta}
+            idFinca={filtros.finca}
+            resumen={[
+              { label: 'Kg empacados', valor: kgTotal },
+              { label: 'Órdenes de corte', valor: ordenes.length },
+              { label: 'Códigos QR', valor: qrs.length },
+              { label: 'Cajas registradas', valor: cajasTotal }
+            ]}
+            tablas={tablasProduccion}
+          />
+          <button className="btn-primary" onClick={() => window.print()}>
+            Imprimir / Guardar PDF
+          </button>
+        </div>
+      </div>
       <Reporte titulo="Reporte de producción">
         <Resumen
           items={[
@@ -151,14 +255,14 @@ function ReporteProduccion({ datos, filtros, setFiltros, fincas }) {
         />
         <h3 className="rep-seccion">Producción por finca</h3>
         <div className="table-responsive">
-          <table className="table">
+          <table className="rep-tabla">
             <thead>
               <tr>
                 <th>Finca</th>
-                <th>Órdenes de corte</th>
-                <th>QR generados</th>
-                <th>Cajas</th>
-                <th>Peso (kg)</th>
+                <th className="r">Órdenes de corte</th>
+                <th className="r">QR generados</th>
+                <th className="r">Cajas</th>
+                <th className="r">Peso (kg)</th>
               </tr>
             </thead>
             <tbody>
@@ -167,27 +271,34 @@ function ReporteProduccion({ datos, filtros, setFiltros, fincas }) {
                 .map((f) => (
                   <tr key={f.finca}>
                     <td>{f.finca}</td>
-                    <td>{f.cortes}</td>
-                    <td>{f.qrs}</td>
-                    <td>{f.cajas}</td>
-                    <td><strong>{f.kg.toLocaleString('es-CO')}</strong> kg</td>
+                    <td className="r">{f.cortes}</td>
+                    <td className="r">{f.qrs}</td>
+                    <td className="r">{f.cajas}</td>
+                    <td className="r"><strong>{f.kg.toLocaleString('es-CO')}</strong> kg</td>
                   </tr>
                 ))}
+                <tr className="rep-tabla-total">
+                  <td>Total</td>
+                  <td className="r">{ordenes.length}</td>
+                  <td className="r">{qrs.length}</td>
+                  <td className="r">{cajasTotal}</td>
+                  <td className="r"><strong>{kgTotal.toLocaleString('es-CO')}</strong> kg</td>
+                </tr>
             </tbody>
           </table>
         </div>
 
         <h3 className="rep-seccion">Detalle de empaque</h3>
         <div className="table-responsive">
-          <table className="table">
+          <table className="rep-tabla">
             <thead>
               <tr>
                 <th>Fecha</th>
                 <th>Código</th>
                 <th>Finca</th>
                 <th>Lote</th>
-                <th>Peso (kg)</th>
-                <th>Cajas</th>
+                <th className="r">Peso (kg)</th>
+                <th className="r">Cajas</th>
               </tr>
             </thead>
             <tbody>
@@ -197,8 +308,8 @@ function ReporteProduccion({ datos, filtros, setFiltros, fincas }) {
                   <td>{q.codigo}</td>
                   <td>{q.finca}</td>
                   <td>{q.lote}</td>
-                  <td>{Number(q.peso_neto || 0).toLocaleString('es-CO')}</td>
-                  <td>{q.total_cajas || 0}</td>
+                  <td className="r">{Number(q.peso_neto || 0).toLocaleString('es-CO')}</td>
+                  <td className="r">{q.total_cajas || 0}</td>
                 </tr>
               ))}
             </tbody>
@@ -236,6 +347,42 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
 
   const TIPO_LABEL = { sigatoka: 'Sigatoka', moko_fusarium: 'Moko/Fusarium', picudo: 'Picudo' };
 
+  const tablasFito = [
+    {
+      titulo: 'Estado fitosanitario de lotes',
+      columnas: ['Lote', 'Finca', 'Estado', 'Detalle'],
+      filas: lotes.map((l) => [
+        l.nombre,
+        l.finca,
+        l.estado_efectivo,
+        l.estado_efectivo === 'carencia'
+          ? `Carencia hasta ${fechaCorta(l.carencia_hasta)} · ${l.carencia_agroquimico || ''}`
+          : l.estado_efectivo === 'cuarentena'
+            ? 'Foco fitosanitario (Moko/Fusarium)'
+            : l.estado_efectivo === 'restringido'
+              ? 'Requiere validación de gerencia'
+              : 'Sin restricción'
+      ])
+    },
+    {
+      titulo: 'Últimos valores de riesgo por lote',
+      columnas: ['Lote', 'Finca', 'Sigatoka (severidad %)', 'Moko (severidad)', 'Picudo (adultos)'],
+      filas: Object.values(riesgos).map((r) => [r.lote, r.finca, r.sigatoka ?? '—', r.moko ?? '—', r.picudo ?? '—'])
+    },
+    {
+      titulo: 'Aplicaciones del período',
+      columnas: ['Fecha', 'Finca', 'Lote', 'Agroquímico', 'Dosis (L/ha)', 'Carencia hasta'],
+      filas: apps.map((a) => [
+        fechaCorta(a.fecha_aplicacion),
+        a.finca,
+        a.lote,
+        a.agroquimico,
+        a.dosis_aplicada ?? '—',
+        fechaCorta(a.fecha_fin_carencia)
+      ])
+    }
+  ];
+
   return (
     <Fragment>
       <FiltrosReporte
@@ -245,6 +392,33 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
         filtroFinca={filtros.finca}
         setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
       />
+      <div className="page-head no-print">
+        <div>
+          <h2>Reporte fitosanitario</h2>
+          <p className="rep-sub">
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || {}).nombre : 'Todas las fincas'}
+          </p>
+        </div>
+        <div className="page-head-acciones">
+          <BotonGuardar
+            tipo="fitosanitario"
+            titulo={`Reporte fitosanitario ${filtros.desde ? `(${fechaLegible(filtros.desde)} - ${fechaLegible(filtros.hasta)})` : ''}`}
+            desde={filtros.desde}
+            hasta={filtros.hasta}
+            idFinca={filtros.finca}
+            resumen={[
+              { label: 'Lotes en carencia', valor: enCarencia },
+              { label: 'Lotes en cuarentena', valor: enCuarentena },
+              { label: 'Lotes restringidos', valor: restringidos },
+              { label: 'Evaluaciones en periodo', valor: evals.length }
+            ]}
+            tablas={tablasFito}
+          />
+          <button className="btn-primary" onClick={() => window.print()}>
+            Imprimir / Guardar PDF
+          </button>
+        </div>
+      </div>
       <Reporte titulo="Reporte fitosanitario">
         <Resumen
           items={[
@@ -257,7 +431,7 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
 
         <h3 className="rep-seccion">Estado fitosanitario de lotes</h3>
         <div className="table-responsive">
-          <table className="table">
+          <table className="rep-tabla">
             <thead>
               <tr>
                 <th>Lote</th>
@@ -294,7 +468,7 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
           <p className="rep-vacio">No hay evaluaciones en el período.</p>
         ) : (
           <div className="table-responsive">
-            <table className="table">
+            <table className="rep-tabla">
               <thead>
                 <tr>
                   <th>Lote</th>
@@ -319,14 +493,14 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
 
         <h3 className="rep-seccion">Aplicaciones del período</h3>
         <div className="table-responsive">
-          <table className="table">
+          <table className="rep-tabla">
             <thead>
               <tr>
                 <th>Fecha</th>
                 <th>Finca</th>
                 <th>Lote</th>
                 <th>Agroquímico</th>
-                <th>Dosis (L/ha)</th>
+                <th className="r">Dosis (L/ha)</th>
                 <th>Carencia hasta</th>
               </tr>
             </thead>
@@ -337,7 +511,7 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
                   <td>{a.finca}</td>
                   <td>{a.lote}</td>
                   <td>{a.agroquimico}</td>
-                  <td>{a.dosis_aplicada ?? '—'}</td>
+                  <td className="r">{a.dosis_aplicada ?? '—'}</td>
                   <td>{fechaCorta(a.fecha_fin_carencia)}</td>
                 </tr>
               ))}
@@ -380,9 +554,51 @@ function ReporteTrazabilidad({ datos }) {
           <h2>Trazabilidad por código QR</h2>
           <p className="rep-sub">Consulte el origen completo de un empaque por su código QR.</p>
         </div>
-        <button className="btn-primary" onClick={() => window.print()} disabled={!traza}>
-          Imprimir / Guardar PDF
-        </button>
+        <div className="page-head-acciones">
+          <BotonGuardar
+            tipo="trazabilidad"
+            titulo={`Trazabilidad · ${(traza && traza.codigo) || codigo.trim() || '—'}`}
+            resumen={
+              traza
+                ? [
+                    { label: 'Producto', valor: traza.producto },
+                    { label: 'Lote', valor: traza.lote },
+                    { label: 'Finca', valor: traza.finca },
+                    { label: 'Peso neto (kg)', valor: traza.peso_neto || 0 }
+                  ]
+                : []
+            }
+            tablas={
+              traza
+                ? [
+                    {
+                      titulo: 'Datos generales',
+                      columnas: ['Producto', 'Lote', 'Finca', 'Fecha', 'Peso (kg)', 'Código ICA'],
+                      filas: [[traza.producto, traza.lote, traza.finca, `${traza.fecha_proceso} ${traza.hora_proceso}`, traza.peso_neto || 0, traza.codigo_ica_finca || '—']]
+                    },
+                    {
+                      titulo: 'Cajas asociadas',
+                      columnas: ['# Caja', 'Peso bruto (kg)', 'Tipo de empaque', 'Fecha', 'Hora'],
+                      filas: (traza.cajas || []).map((c) => [c.id_caja, c.peso_bruto ?? '—', c.tipo_empaque || '—', fechaCorta(c.fecha_empaque), c.hora_empaque || '—'])
+                    },
+                    {
+                      titulo: 'Aplicaciones del lote',
+                      columnas: ['Fecha', 'Agroquímico', 'Dosis (L/ha)', 'Carencia hasta'],
+                      filas: (traza.aplicaciones || []).map((a) => [fechaCorta(a.fecha_aplicacion), a.agroquimico, a.dosis_aplicada ?? '—', fechaCorta(a.fecha_fin_carencia)])
+                    },
+                    {
+                      titulo: 'Evaluaciones del lote',
+                      columnas: ['Fecha', 'Tipo', 'YHA', 'Severidad', 'Adultos'],
+                      filas: (traza.evaluaciones || []).map((e) => [fechaCorta(e.fecha_evaluacion), e.tipo_evaluacion, e.yha ?? '—', e.indice_severidad ?? '—', e.numero_adultos ?? '—'])
+                    }
+                  ]
+                : []
+            }
+          />
+          <button className="btn-primary" onClick={() => window.print()} disabled={!traza}>
+            Imprimir / Guardar PDF
+          </button>
+        </div>
       </div>
       <div className="dash-filtros no-print">
         <div className="dash-filtro-item">
@@ -416,7 +632,7 @@ function ReporteTrazabilidad({ datos }) {
 
           <h3 className="rep-seccion">Cajas asociadas</h3>
           <div className="table-responsive">
-            <table className="table">
+            <table className="rep-tabla">
               <thead>
                 <tr>
                   <th># Caja</th>
@@ -445,7 +661,7 @@ function ReporteTrazabilidad({ datos }) {
             <p className="rep-vacio">Sin aplicaciones registradas.</p>
           ) : (
             <div className="table-responsive">
-              <table className="table">
+              <table className="rep-tabla">
                 <thead>
                   <tr>
                     <th>Fecha</th>
@@ -473,7 +689,7 @@ function ReporteTrazabilidad({ datos }) {
             <p className="rep-vacio">Sin evaluaciones registradas.</p>
           ) : (
             <div className="table-responsive">
-              <table className="table">
+              <table className="rep-tabla">
                 <thead>
                   <tr>
                     <th>Fecha</th>
@@ -535,9 +751,38 @@ function ReporteInventario({ datos }) {
           <h2>Inventario campesino</h2>
           <p className="rep-sub">Personal, fincas y lotes del cultivo.</p>
         </div>
-        <button className="btn-primary" onClick={() => window.print()}>
-          Imprimir / Guardar PDF
-        </button>
+        <div className="page-head-acciones">
+          <BotonGuardar
+            tipo="inventario"
+            titulo="Inventario campesino"
+            resumen={[
+              { label: 'Usuarios', valor: (datos.usuarios || []).length },
+              { label: 'Fincas', valor: fincas.length },
+              { label: 'Lotes', valor: lotes.length },
+              { label: 'Asignaciones', valor: (datos.asignaciones || []).length }
+            ]}
+            tablas={[
+              {
+                titulo: 'Personal y rol',
+                columnas: ['Nombre', 'Email', 'Rol'],
+                filas: usuarios.map((u) => [u.nombre, u.email, ROL_LABEL[u.rol] || u.rol])
+              },
+              {
+                titulo: 'Asignación personal - finca',
+                columnas: ['Finca', 'Usuarios asignados'],
+                filas: Object.entries(porFinca).map(([finca, info]) => [finca, info.usuarios.join(', ')])
+              },
+              {
+                titulo: 'Lotes por finca',
+                columnas: ['Finca', 'Lote', 'Tipo', 'Área (ha)', 'Estado'],
+                filas: lotes.map((l) => [l.finca, l.nombre, l.tipo_siembra, l.area_hectareas ?? '—', l.estado_efectivo])
+              }
+            ]}
+          />
+          <button className="btn-primary" onClick={() => window.print()}>
+            Imprimir / Guardar PDF
+          </button>
+        </div>
       </div>
       <div className="dash-filtros no-print">
         <div className="dash-filtro-item">
@@ -572,7 +817,7 @@ function ReporteInventario({ datos }) {
 
         <h3 className="rep-seccion">Personal y rol</h3>
         <div className="table-responsive">
-          <table className="table">
+          <table className="rep-tabla">
             <thead>
               <tr>
                 <th>Nombre</th>
@@ -594,7 +839,7 @@ function ReporteInventario({ datos }) {
 
         <h3 className="rep-seccion">Asignación personal - finca</h3>
         <div className="table-responsive">
-          <table className="table">
+          <table className="rep-tabla">
             <thead>
               <tr>
                 <th>Finca</th>
@@ -614,13 +859,13 @@ function ReporteInventario({ datos }) {
 
         <h3 className="rep-seccion">Lotes por finca</h3>
         <div className="table-responsive">
-          <table className="table">
+          <table className="rep-tabla">
             <thead>
               <tr>
                 <th>Finca</th>
                 <th>Lote</th>
                 <th>Tipo</th>
-                <th>Área (ha)</th>
+                <th className="r">Área (ha)</th>
                 <th>Estado</th>
               </tr>
             </thead>
@@ -630,7 +875,7 @@ function ReporteInventario({ datos }) {
                   <td>{l.finca}</td>
                   <td>{l.nombre}</td>
                   <td>{l.tipo_siembra}</td>
-                  <td>{l.area_hectareas ?? '—'}</td>
+                  <td className="r">{l.area_hectareas ?? '—'}</td>
                   <td><span className={`badge badge-${l.estado_efectivo}`}>{l.estado_efectivo}</span></td>
                 </tr>
               ))}
@@ -667,6 +912,132 @@ function FiltrosReporte({ filtros, setFiltros, fincas, filtroFinca, setFiltroFin
         <button className="btn-cancel" onClick={() => setFiltros({ desde: '', hasta: hoyISO() })}>Todo</button>
       </div>
     </div>
+  );
+}
+
+function HistorialReportes() {
+  const [reportes, setReportes] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+  const [ver, setVer] = useState(null);
+
+  async function cargar() {
+    setCargando(true);
+    setError('');
+    try {
+      const res = await reportesApi.listar();
+      setReportes(res.reportes || []);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  useEffect(() => {
+    cargar();
+  }, []);
+
+  async function eliminar(id) {
+    if (!window.confirm('¿Eliminar este reporte del historial?')) return;
+    try {
+      await reportesApi.eliminar(id);
+      if (ver && ver.id_reporte === id) setVer(null);
+      cargar();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  return (
+    <Fragment>
+      <div className="page-head">
+        <div>
+          <h2>Historial de reportes</h2>
+          <p className="rep-sub">Reportes guardados que pueden reimprimirse.</p>
+        </div>
+        {ver && (
+          <div className="page-head-acciones">
+            <button className="btn-primary" onClick={() => window.print()}>
+              Imprimir / Guardar PDF
+            </button>
+          </div>
+        )}
+      </div>
+      {error && <div className="alert alert-error no-print">{error}</div>}
+
+      {ver ? (
+        <div>
+          <button className="btn-cancel no-print" onClick={() => setVer(null)}>← Volver al historial</button>
+          <Reporte titulo={ver.titulo}>
+            <Resumen items={(ver.resumen || []).map((r) => ({ label: r.label, valor: r.valor }))} />
+            {(ver.detalle || []).map((tabla, ti) => (
+              <div key={ti}>
+                <h3 className="rep-seccion">{tabla.titulo}</h3>
+                <div className="table-responsive">
+                  <table className="rep-tabla">
+                    <thead>
+                      <tr>
+                        {tabla.columnas.map((c, ci) => (
+                          <th key={ci}>{c}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tabla.filas.map((fila, fi) => (
+                        <tr key={fi}>
+                          {fila.map((v, vi) => (
+                            <td key={vi}>{v ?? '—'}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </Reporte>
+        </div>
+      ) : cargando ? (
+        <div className="rep-vacio">Cargando historial…</div>
+      ) : reportes.length === 0 ? (
+        <div className="rep-vacio">
+          No hay reportes guardados. Use "Guardar en historial" desde cada reporte.
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <table className="rep-tabla">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Título</th>
+                <th>Período</th>
+                <th>Finca</th>
+                <th>Generado por</th>
+                <th className="r">Fecha</th>
+                <th className="c no-print">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportes.map((r) => (
+                <tr key={r.id_reporte}>
+                  <td>{TIPO_REPORTE_LABEL[r.tipo_reporte] || r.tipo_reporte}</td>
+                  <td>{r.titulo}</td>
+                  <td>{r.desde ? `${fechaLegible(r.desde)} — ${fechaLegible(r.hasta)}` : '—'}</td>
+                  <td>{r.finca || '—'}</td>
+                  <td>{r.generado_por_nombre || '—'}</td>
+                  <td className="r">{fechaLegible(r.created_at)}</td>
+                  <td className="c no-print">
+                    <button className="btn-cancel" onClick={() => setVer(r)}>Ver</button>{' '}
+                    <button className="btn-danger" onClick={() => eliminar(r.id_reporte)}>Eliminar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Fragment>
   );
 }
 
@@ -732,6 +1103,7 @@ function Reportes() {
       )}
       {seccion === 'trazabilidad' && <ReporteTrazabilidad datos={datos || {}} />}
       {seccion === 'inventario' && <ReporteInventario datos={datos || {}} />}
+      {seccion === 'historial' && <HistorialReportes />}
     </AppLayout>
   );
 }
