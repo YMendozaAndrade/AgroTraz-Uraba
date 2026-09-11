@@ -4,11 +4,8 @@ import AuthLayout from './AuthLayout';
 import { authApi } from '../services/api';
 
 const ROLES = [
-  { value: 'administrador', label: 'Administrador' },
-  { value: 'agronomo', label: 'Agrónomo' },
   { value: 'evaluador_campo', label: 'Evaluador de campo' },
-  { value: 'operador_empacadora', label: 'Operador de empacadora' },
-  { value: 'gerente', label: 'Gerente' }
+  { value: 'operador_empacadora', label: 'Operador de empacadora' }
 ];
 
 function Registro() {

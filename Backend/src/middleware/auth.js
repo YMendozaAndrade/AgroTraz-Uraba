@@ -1,9 +1,15 @@
 const jwt = require('jsonwebtoken');
 
+const SECRETO = process.env.JWT_SECRET;
+
+if (!SECRETO || SECRETO.length < 16) {
+  console.error('ADVERTENCIA CRÍTICA: JWT_SECRET no definido o muy corto. Los tokens son inseguros.');
+}
+
 function generarToken(usuario) {
   return jwt.sign(
     { id_usuario: usuario.id_usuario, rol: usuario.rol, nombre: usuario.nombre },
-    process.env.JWT_SECRET,
+    SECRETO,
     { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
   );
 }
@@ -14,7 +20,7 @@ function verificarToken(req, res, next) {
     return res.status(401).json({ status: 'error', message: 'Token no proporcionado' });
   }
   try {
-    req.usuario = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    req.usuario = jwt.verify(header.split(' ')[1], SECRETO);
     next();
   } catch (err) {
     return res.status(401).json({ status: 'error', message: 'Token inválido o expirado' });

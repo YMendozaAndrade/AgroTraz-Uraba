@@ -88,9 +88,20 @@ router.put('/:id', rolesGestion, async (req, res) => {
   const { nombre, codigo_ica, municipio, departamento, direccion, area_hectareas, encargado_responsable, poligono_geojson, observaciones } = req.body;
 
   try {
-    const [existe] = await pool.query('SELECT id_finca FROM fincas WHERE id_finca = ?', [id]);
+    const [existe] = await pool.query('SELECT * FROM fincas WHERE id_finca = ?', [id]);
     if (existe.length === 0) {
       return res.status(404).json({ status: 'error', message: 'Finca no encontrada' });
+    }
+
+    const nuevoCodigo = codigo_ica ?? existe[0].codigo_ica;
+    const [dup] = await pool.query('SELECT id_finca FROM fincas WHERE id_finca <> ? AND codigo_ica = ?', [id, nuevoCodigo]);
+    if (dup.length > 0) {
+      return res.status(409).json({ status: 'error', message: 'Ya existe otra finca con ese código ICA' });
+    }
+
+    const nuevaArea = area_hectareas ?? existe[0].area_hectareas;
+    if (nuevaArea != null && nuevaArea !== '' && (Number.isNaN(Number(nuevaArea)) || Number(nuevaArea) <= 0)) {
+      return res.status(400).json({ status: 'error', message: 'area_hectareas debe ser un número positivo' });
     }
 
     await pool.query(
@@ -100,11 +111,11 @@ router.put('/:id', rolesGestion, async (req, res) => {
        WHERE id_finca = ?`,
       [
         nombre ?? existe[0].nombre,
-        codigo_ica ?? existe[0].codigo_ica,
+        nuevoCodigo,
         municipio ?? existe[0].municipio,
         departamento ?? existe[0].departamento,
         direccion ?? existe[0].direccion,
-        area_hectareas ?? existe[0].area_hectareas,
+        nuevaArea,
         encargado_responsable ?? existe[0].encargado_responsable,
         poligono_geojson ?? existe[0].poligono_geojson,
         observaciones ?? existe[0].observaciones,

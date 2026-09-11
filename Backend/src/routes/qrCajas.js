@@ -18,7 +18,7 @@ function generarCodigoQR() {
   return `AGT-${anio}-${random}`;
 }
 
-async function validarLoteParaEmpacar(idLote) {
+async function validarLoteParaEmpacar(idLote, fechaEmpaque) {
   const [lotes] = await pool.query('SELECT id_lote, id_finca, nombre, estado, activo FROM lotes WHERE id_lote = ?', [idLote]);
   if (lotes.length === 0) {
     return { ok: false, message: 'El lote no existe' };
@@ -33,6 +33,28 @@ async function validarLoteParaEmpacar(idLote) {
   if (lote.estado === 'restringido') {
     return { ok: false, message: `El lote "${lote.nombre}" está RESTRINGIDO. El empaque requiere validación de gerencia` };
   }
+
+  if (fechaEmpaque) {
+    const [carencias] = await pool.query(
+      `SELECT a.fecha_aplicacion, a.fecha_fin_carencia, q.nombre AS agroquimico
+       FROM aplicaciones a
+       JOIN agroquimicos q ON q.id_agroquimico = a.id_agroquimico
+       WHERE a.id_lote = ?`,
+      [idLote]
+    );
+    const enCarencia = carencias.find(
+      (c) => fechaEmpaque >= c.fecha_aplicacion.toISOString().slice(0, 10) &&
+             fechaEmpaque <= c.fecha_fin_carencia.toISOString().slice(0, 10)
+    );
+    if (enCarencia) {
+      const fin = enCarencia.fecha_fin_carencia.toISOString().slice(0, 10);
+      return {
+        ok: false,
+        message: `El lote "${lote.nombre}" está en CARENCIA hasta el ${fin} (${enCarencia.agroquimico}). No puede empacarse el ${fechaEmpaque}`
+      };
+    }
+  }
+
   return { ok: true, lote };
 }
 
@@ -83,8 +105,16 @@ router.post('/', rolesGestion, async (req, res) => {
     return res.status(400).json({ status: 'error', message: 'id_lote, fecha_proceso, hora_proceso y peso_neto son obligatorios' });
   }
 
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_proceso)) {
+    return res.status(400).json({ status: 'error', message: 'fecha_proceso debe tener formato YYYY-MM-DD' });
+  }
+
+  if (Number.isNaN(Number(peso_neto)) || Number(peso_neto) <= 0) {
+    return res.status(400).json({ status: 'error', message: 'peso_neto debe ser un número positivo' });
+  }
+
   try {
-    const validacion = await validarLoteParaEmpacar(id_lote);
+    const validacion = await validarLoteParaEmpacar(id_lote, fecha_proceso);
     if (!validacion.ok) {
       return res.status(409).json({ status: 'error', message: validacion.message });
     }
@@ -203,10 +233,14 @@ router.get('/:id/cajas', async (req, res) => {
 // Registrar caja para un QR
 router.post('/:id/cajas', rolesGestion, async (req, res) => {
   const { id } = req.params;
-  const { id_lote, peso_bruto, tipo_empaque, fecha_empaque, hora_empaque, sincronizado } = req.body;
+  const { peso_bruto, tipo_empaque, fecha_empaque, hora_empaque, sincronizado } = req.body;
 
-  if (!fecha_empaque || !hora_empaque || !id_lote) {
-    return res.status(400).json({ status: 'error', message: 'id_lote, fecha_empaque y hora_empaque son obligatorios' });
+  if (!fecha_empaque || !hora_empaque) {
+    return res.status(400).json({ status: 'error', message: 'fecha_empaque y hora_empaque son obligatorios' });
+  }
+
+  if (tipo_empaque && !TIPOS_EMPAQUE.includes(tipo_empaque)) {
+    return res.status(400).json({ status: 'error', message: 'tipo_empaque inválido' });
   }
 
   try {
@@ -215,10 +249,15 @@ router.post('/:id/cajas', rolesGestion, async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Código QR no encontrado' });
     }
 
+    const validacion = await validarLoteParaEmpacar(qrs[0].id_lote, fecha_empaque);
+    if (!validacion.ok) {
+      return res.status(409).json({ status: 'error', message: validacion.message });
+    }
+
     const [result] = await pool.query(
       `INSERT INTO cajas (id_qr, id_lote, peso_bruto, tipo_empaque, fecha_empaque, hora_empaque, sincronizado)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, id_lote, peso_bruto != null && peso_bruto !== '' ? peso_bruto : null, tipo_empaque || null, fecha_empaque, hora_empaque, sincronizado ? 1 : 0]
+      [id, qrs[0].id_lote, peso_bruto != null && peso_bruto !== '' ? peso_bruto : null, tipo_empaque || null, fecha_empaque, hora_empaque, sincronizado ? 1 : 0]
     );
 
     const [nueva] = await pool.query('SELECT * FROM cajas WHERE id_caja = ?', [result.insertId]);

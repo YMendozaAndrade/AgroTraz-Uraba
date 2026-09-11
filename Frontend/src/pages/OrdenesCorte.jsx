@@ -89,6 +89,17 @@ function OrdenesCorte() {
     }
   }
 
+  function labelLote(l) {
+    if (l.estado_efectivo === 'cuarentena') return `${l.finca} / ${l.nombre} — EN CUARENTENA`;
+    if (l.estado_efectivo === 'restringido') return `${l.finca} / ${l.nombre} — RESTRINGIDO`;
+    if (l.estado_efectivo === 'carencia') return `${l.finca} / ${l.nombre} — CARENCIA hasta ${l.carencia_hasta.toString().slice(0, 10)}`;
+    return `${l.finca} / ${l.nombre} (${l.estado_efectivo || l.estado})`;
+  }
+
+  function loteDisponible(l) {
+    return l.estado_efectivo === 'disponible' || l.estado_efectivo === undefined;
+  }
+
   return (
     <AppLayout>
       {mensaje && (
@@ -169,9 +180,16 @@ function OrdenesCorte() {
                   <select name="id_lote" value={form.id_lote} onChange={handleChange} required>
                     <option value="">Seleccione un lote</option>
                     {lotes.map((l) => (
-                      <option key={l.id_lote} value={l.id_lote}>{l.finca} / {l.nombre} ({l.estado})</option>
+                      <option key={l.id_lote} value={l.id_lote} disabled={!loteDisponible(l)}>
+                        {labelLote(l)}
+                      </option>
                     ))}
                   </select>
+                  {form.id_lote && !loteDisponible(lotes.find((l) => String(l.id_lote) === String(form.id_lote))) && (
+                    <p style={{ marginTop: 6, fontSize: 12, color: '#b3352b' }}>
+                      Este lote no está disponible: el sistema bloquearía la orden automáticamente.
+                    </p>
+                  )}
                 </div>
                 <div className="form-field-modal">
                   <label>Fecha de corte *</label>

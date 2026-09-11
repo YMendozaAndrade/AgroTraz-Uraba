@@ -47,7 +47,8 @@ export const lotesApi = {
 };
 
 export const usuariosApi = {
-  listar: () => request('/usuarios')
+  listar: () => request('/usuarios'),
+  crear: (usuario) => request('/usuarios', 'POST', usuario)
 };
 
 export const asignacionesApi = {

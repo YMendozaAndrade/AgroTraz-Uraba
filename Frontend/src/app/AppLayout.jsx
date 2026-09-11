@@ -1,6 +1,18 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import './app.css';
 
+const ICONOS = {
+  '/dashboard': 'M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z',
+  '/fincas': 'M4 21V4M4 21h16M4 13h16M8 8h.01M12 8h.01M8 12h.01M12 12h.01',
+  '/lotes': 'M9 8l3 3 7-7M4 21V4M4 21h16',
+  '/evaluaciones': 'M4 4h16v16H4zM4 9h16M4 14h16',
+  '/agroquimicos': 'M12 3v3M5.6 5.6l2.1 2.1M3 12h3M5.6 18.4l2.1-2.1M12 21v-3M18.4 18.4l-2.1-2.1M21 12h-3M18.4 5.6l-2.1 2.1M12 8v4',
+  '/aplicaciones': 'M12 3v12M6 8l6-5 6 5-6 5z',
+  '/ordenes-corte': 'M4 8h11v9a2 2 0 0 1-2 2H4zM15 10l5-3v9l-5-3',
+  '/qr': 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h3v3h-3zM13 16h2M16 13h1M18 13v1M17 16l-1 1M21 13v7h-7',
+  '/reportes': 'M4 5h16v14H4zM4 9h16M9 13h6M9 17h4M8 13h.01M12 17h.01'
+};
+
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Inicio', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo', 'operador_empacadora'] },
   { to: '/fincas', label: 'Fincas', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
@@ -9,7 +21,8 @@ const NAV_ITEMS = [
   { to: '/agroquimicos', label: 'Agroquímicos', roles: ['administrador', 'gerente', 'agronomo'] },
   { to: '/aplicaciones', label: 'Aplicaciones', roles: ['administrador', 'gerente', 'agronomo'] },
   { to: '/ordenes-corte', label: 'Órdenes de corte', roles: ['administrador', 'gerente', 'agronomo'] },
-  { to: '/qr', label: 'QR / Cajas', roles: ['administrador', 'gerente', 'agronomo', 'operador_empacadora'] }
+  { to: '/qr', label: 'QR / Cajas', roles: ['administrador', 'gerente', 'agronomo', 'operador_empacadora'] },
+  { to: '/reportes', label: 'Reportes', roles: ['administrador', 'gerente', 'agronomo'] }
 ];
 
 function AppLayout({ children }) {
@@ -40,10 +53,17 @@ function AppLayout({ children }) {
               to={item.to}
               className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
             >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d={ICONOS[item.to] || 'M3 3h18v18H3z'} />
+              </svg>
               {item.label}
             </NavLink>
           ))}
         </nav>
+        <div className="side-foot">
+          Bienvenida/o, {usuario.nombre || 'usuario'}<br />
+          {usuario.rol} · Fin de sesión
+        </div>
       </aside>
       <main className="app-main">
         <div className="app-topbar">

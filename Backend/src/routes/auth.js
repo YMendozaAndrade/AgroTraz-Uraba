@@ -5,11 +5,36 @@ const { generarToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+const ROLES_AUTORREGISTRO = ['evaluador_campo', 'operador_empacadora'];
+
+function validarEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 router.post('/register', async (req, res) => {
   const { nombre, email, password, telefono, rol } = req.body;
 
   if (!nombre || !email || !password || !rol) {
     return res.status(400).json({ status: 'error', message: 'nombre, email, password y rol son obligatorios' });
+  }
+
+  if (typeof nombre !== 'string' || nombre.trim().length < 3 || nombre.trim().length > 120) {
+    return res.status(400).json({ status: 'error', message: 'El nombre debe tener entre 3 y 120 caracteres' });
+  }
+
+  if (!validarEmail(email) || email.length > 120) {
+    return res.status(400).json({ status: 'error', message: 'El correo electrónico no es válido' });
+  }
+
+  if (typeof password !== 'string' || password.length < 6) {
+    return res.status(400).json({ status: 'error', message: 'La contraseña debe tener al menos 6 caracteres' });
+  }
+
+  if (!ROLES_AUTORREGISTRO.includes(rol)) {
+    return res.status(403).json({
+      status: 'error',
+      message: 'No puede registrarse con ese rol. Los roles administrativos los crea un administrador'
+    });
   }
 
   try {

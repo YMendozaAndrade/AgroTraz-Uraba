@@ -100,6 +100,9 @@ router.post('/', rolesGestion, async (req, res) => {
   if (!id_lote || !fecha_corte) {
     return res.status(400).json({ status: 'error', message: 'id_lote y fecha_corte son obligatorios' });
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_corte)) {
+    return res.status(400).json({ status: 'error', message: 'fecha_corte debe tener formato YYYY-MM-DD' });
+  }
 
   try {
     const validacion = await validarLoteParaCorte(id_lote, fecha_corte);
@@ -143,10 +146,29 @@ router.put('/:id', rolesGestion, async (req, res) => {
       return res.status(400).json({ status: 'error', message: 'estado inválido' });
     }
 
-    const nuevoEstado = estado ?? existe[0].estado;
+    if (fecha_corte && !/^\d{4}-\d{2}-\d{2}$/.test(fecha_corte)) {
+      return res.status(400).json({ status: 'error', message: 'fecha_corte debe tener formato YYYY-MM-DD' });
+    }
+
+    const anterior = existe[0].estado;
+    const nuevoEstado = estado ?? anterior;
+
+    const TRANSICIONES = {
+      programada: ['ejecutada', 'cancelada', 'programada'],
+      ejecutada: ['ejecutada'],
+      cancelada: ['cancelada']
+    };
+
+    if (!TRANSICIONES[anterior] || !TRANSICIONES[anterior].includes(nuevoEstado)) {
+      return res.status(409).json({
+        status: 'error',
+        message: `Transición inválida: una orden ${anterior} no puede pasar a ${nuevoEstado}`
+      });
+    }
+
     const nuevaFecha = fecha_corte ?? existe[0].fecha_corte;
 
-    if ((estado !== 'cancelada' && existe[0].estado !== 'cancelada') || estado === 'ejecutada') {
+    if (anterior === 'programada' || nuevoEstado === 'programada') {
       const validacion = await validarLoteParaCorte(existe[0].id_lote, nuevaFecha);
       if (!validacion.ok) {
         return res.status(409).json({ status: 'error', message: validacion.message });

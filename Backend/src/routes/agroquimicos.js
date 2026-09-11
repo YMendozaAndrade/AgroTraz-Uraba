@@ -77,6 +77,12 @@ router.put('/:id', rolesGestion, async (req, res) => {
       return res.status(400).json({ status: 'error', message: 'tipo_producto inválido' });
     }
 
+    const nuevoRegistro = registro_ica ?? existe[0].registro_ica;
+    const [dup] = await pool.query('SELECT id_agroquimico FROM agroquimicos WHERE id_agroquimico <> ? AND registro_ica = ?', [id, nuevoRegistro]);
+    if (dup.length > 0) {
+      return res.status(409).json({ status: 'error', message: 'Ya existe otro agroquímico con ese registro ICA' });
+    }
+
     await pool.query(
       `UPDATE agroquimicos SET
          nombre = ?, ingrediente_activo = ?, registro_ica = ?, tipo_producto = ?,
@@ -85,7 +91,7 @@ router.put('/:id', rolesGestion, async (req, res) => {
       [
         nombre ?? existe[0].nombre,
         ingrediente_activo ?? existe[0].ingrediente_activo,
-        registro_ica ?? existe[0].registro_ica,
+        nuevoRegistro,
         tipo_producto ?? existe[0].tipo_producto,
         dosis_recomendada ?? existe[0].dosis_recomendada,
         dias_carencia ?? existe[0].dias_carencia,

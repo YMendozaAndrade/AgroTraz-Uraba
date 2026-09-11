@@ -156,7 +156,13 @@ function Lotes() {
                     <td>{Number(l.area_hectareas || 0).toFixed(2)}</td>
                     <td>{l.densidad_plantas || '—'}</td>
                     <td>
-                      <span className={`badge badge-${l.estado}`}>{l.estado}</span>
+                      {l.estado_efectivo === 'carencia' ? (
+                        <span className="badge badge-carencia">
+                          Carencia hasta {l.carencia_hasta.toString().slice(0, 10)}
+                        </span>
+                      ) : (
+                        <span className={`badge badge-${l.estado_efectivo || l.estado}`}>{l.estado_efectivo || l.estado}</span>
+                      )}
                     </td>
                     <td>
                       <span className={`badge ${l.activo ? 'badge-activo' : 'badge-inactivo'}`}>

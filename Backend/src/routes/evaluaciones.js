@@ -21,29 +21,59 @@ const JERARQUIA_ESTADO = { disponible: 0, restringido: 1, cuarentena: 2 };
 function estadoRecomendado(tipo, { indice_severidad, numero_adultos }) {
   if (tipo === 'moko_fusarium') {
     if (indice_severidad > UMBRALES.moko_presencia_severidad_min) return 'cuarentena';
+    return 'disponible';
   }
   if (tipo === 'sigatoka') {
     if (indice_severidad > UMBRALES.sigatoka_severidad_critica) return 'restringido';
+    return 'disponible';
   }
   if (tipo === 'picudo') {
     if (numero_adultos > UMBRALES.picudo_adultos_critico) return 'restringido';
+    return 'disponible';
   }
   return null;
 }
 
-async function aplicarTransicionEstado(idLote, tipo, datos) {
-  const recomendado = estadoRecomendado(tipo, datos);
+// Recalcula el estado del lote a partir de las evaluaciones más recientes por tipo.
+async function recalcularEstado(idLote) {
+  const [filas] = await pool.query(
+    `SELECT e.tipo_evaluacion, e.fecha_evaluacion, e.yha, e.indice_severidad, e.numero_adultos
+     FROM evaluaciones e
+     WHERE e.id_lote = ?
+     ORDER BY e.fecha_evaluacion DESC, e.id_evaluacion DESC`,
+    [idLote]
+  );
+  if (filas.length === 0) return null;
+
+  const ultimasPorTipo = {};
+  filas.forEach((f) => {
+    if (!ultimasPorTipo[f.tipo_evaluacion]) {
+      ultimasPorTipo[f.tipo_evaluacion] = f;
+    }
+  });
+
+  const recomendados = Object.values(ultimasPorTipo).map((f) =>
+    estadoRecomendado(f.tipo_evaluacion, f) || 'disponible'
+  );
+
+  return recomendados.reduce(
+    (masAlto, r) => (JERARQUIA_ESTADO[r] > JERARQUIA_ESTADO[masAlto] ? r : masAlto),
+    'disponible'
+  );
+}
+
+async function aplicarTransicionEstado(idLote) {
+  const recomendado = await recalcularEstado(idLote);
   if (!recomendado) return null;
 
   const [lotes] = await pool.query('SELECT estado FROM lotes WHERE id_lote = ?', [idLote]);
   if (lotes.length === 0) return null;
   const actual = lotes[0].estado;
 
-  if (JERARQUIA_ESTADO[recomendado] > JERARQUIA_ESTADO[actual]) {
-    await pool.query('UPDATE lotes SET estado = ? WHERE id_lote = ?', [recomendado, idLote]);
-    return recomendado;
-  }
-  return null;
+  if (recomendado === actual) return null;
+
+  await pool.query('UPDATE lotes SET estado = ? WHERE id_lote = ?', [recomendado, idLote]);
+  return recomendado;
 }
 
 function limpiarBody(body) {
@@ -149,7 +179,7 @@ router.post('/', rolesGestion, async (req, res) => {
        data.yha, data.indice_severidad, data.numero_adultos, data.sincronizada]
     );
 
-    const transicion = await aplicarTransicionEstado(data.id_lote, data.tipo_evaluacion, data);
+    const transicion = await aplicarTransicionEstado(data.id_lote);
 
     const [nueva] = await pool.query(
       `SELECT e.*, l.nombre AS lote, f.nombre AS finca, u.nombre AS evaluador
@@ -163,7 +193,7 @@ router.post('/', rolesGestion, async (req, res) => {
 
     res.status(201).json({
       status: 'ok',
-      message: transicion ? `Evaluación registrada. El lote pasó automáticamente a ${transicion}` : 'Evaluación registrada',
+      message: transicion ? `El estado del lote se actualizó a: ${transicion}` : 'Evaluación registrada',
       evaluacion: nueva[0],
       transicion
     });
@@ -212,7 +242,7 @@ router.put('/:id', rolesGestion, async (req, res) => {
        merged.yha, merged.indice_severidad, merged.numero_adultos, merged.sincronizada, id]
     );
 
-    const transicion = await aplicarTransicionEstado(merged.id_lote, merged.tipo_evaluacion, merged);
+    const transicion = await aplicarTransicionEstado(merged.id_lote);
 
     const [actualizada] = await pool.query(
       `SELECT e.*, l.nombre AS lote, f.nombre AS finca, u.nombre AS evaluador

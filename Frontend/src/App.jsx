@@ -9,6 +9,7 @@ import Aplicaciones from './pages/Aplicaciones';
 import Evaluaciones from './pages/Evaluaciones';
 import OrdenesCorte from './pages/OrdenesCorte';
 import QrCajas from './pages/QrCajas';
+import Reportes from './pages/Reportes';
 import RutaProtegida from './app/RutaProtegida';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
       <Route path="/aplicaciones" element={<RutaProtegida><Aplicaciones /></RutaProtegida>} />
       <Route path="/ordenes-corte" element={<RutaProtegida><OrdenesCorte /></RutaProtegida>} />
       <Route path="/qr" element={<RutaProtegida><QrCajas /></RutaProtegida>} />
+      <Route path="/reportes" element={<RutaProtegida><Reportes /></RutaProtegida>} />
     </Routes>
   );
 }

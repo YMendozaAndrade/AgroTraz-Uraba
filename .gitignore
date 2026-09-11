@@ -9,3 +9,7 @@
 # Archivos de entorno / llaves
 *.env
 .env.local
+
+# Editor / logs
+.vscode/
+*.log
