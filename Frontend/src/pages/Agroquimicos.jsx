@@ -20,6 +20,8 @@ const TIPOS = [
 ];
 
 function Agroquimicos() {
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const puedeGestionar = ['administrador', 'gerente', 'agronomo'].includes(usuario.rol);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -114,9 +116,11 @@ function Agroquimicos() {
       )}
       <div className="page-head">
         <h2>Agroquímicos</h2>
-        <button className="btn-primary" onClick={abrirCrear}>
-          + Nuevo agroquímico
-        </button>
+        {puedeGestionar && (
+          <button className="btn-primary" onClick={abrirCrear}>
+            + Nuevo agroquímico
+          </button>
+        )}
       </div>
 
       <div className="panel-card">
@@ -136,7 +140,7 @@ function Agroquimicos() {
                   <th>Dosis</th>
                   <th>Carencia (días)</th>
                   <th>Estado</th>
-                  <th>Acciones</th>
+                  {puedeGestionar && <th>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -155,10 +159,12 @@ function Agroquimicos() {
                         {i.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td>
-                      <button className="action-btn edit" onClick={() => abrirEditar(i)}>Editar</button>
-                      <button className="action-btn delete" onClick={() => handleDesactivar(i)}>Desactivar</button>
-                    </td>
+                    {puedeGestionar && (
+                      <td>
+                        <button className="action-btn edit" onClick={() => abrirEditar(i)}>Editar</button>
+                        <button className="action-btn delete" onClick={() => handleDesactivar(i)}>Desactivar</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

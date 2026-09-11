@@ -187,33 +187,33 @@ function Evaluaciones() {
                 </tr>
               </thead>
               <tbody>
-                {evaluaciones.map((e) => (
-                  <tr key={e.id_evaluacion}>
-                    <td>{e.fecha_evaluacion.slice(0, 10)}</td>
-                    <td>{e.hora_evaluacion ? e.hora_evaluacion.slice(0, 5) : '—'}</td>
+                {evaluaciones.map((evaluacion) => (
+                  <tr key={evaluacion.id_evaluacion}>
+                    <td>{evaluacion.fecha_evaluacion.slice(0, 10)}</td>
+                    <td>{evaluacion.hora_evaluacion ? evaluacion.hora_evaluacion.slice(0, 5) : '—'}</td>
                     <td>
-                      <span className="badge badge-banano">{e.tipo_evaluacion === 'moko_fusarium' ? 'Moko/Fusarium' : e.tipo_evaluacion}</span>
+                      <span className="badge badge-banano">{evaluacion.tipo_evaluacion === 'moko_fusarium' ? 'Moko/Fusarium' : evaluacion.tipo_evaluacion}</span>
                     </td>
-                    <td>{e.lote}</td>
-                    <td>{e.finca}</td>
+                    <td>{evaluacion.lote}</td>
+                    <td>{evaluacion.finca}</td>
                     <td>
-                      {e.tipo_evaluacion === 'sigatoka' && `YHA ${e.yha ?? '—'} · Sev ${e.indice_severidad ?? '—'}%`}
-                      {e.tipo_evaluacion === 'moko_fusarium' && `Sev ${e.indice_severidad ?? '—'}%`}
-                      {e.tipo_evaluacion === 'picudo' && `${e.numero_adultos ?? '—'} adultos`}
+                      {evaluacion.tipo_evaluacion === 'sigatoka' && `YHA ${evaluacion.yha ?? '—'} · Sev ${evaluacion.indice_severidad ?? '—'}%`}
+                      {evaluacion.tipo_evaluacion === 'moko_fusarium' && `Sev ${evaluacion.indice_severidad ?? '—'}%`}
+                      {evaluacion.tipo_evaluacion === 'picudo' && `${evaluacion.numero_adultos ?? '—'} adultos`}
                     </td>
-                    <td>{e.evaluador}</td>
+                    <td>{evaluacion.evaluador}</td>
                     <td>
-                      <span className={`badge ${e.sincronizada ? 'badge-disponible' : 'badge-restringido'}`}>
-                        {e.sincronizada ? 'Sincronizada' : 'Pendiente'}
+                      <span className={`badge ${evaluacion.sincronizada ? 'badge-disponible' : 'badge-restringido'}`}>
+                        {evaluacion.sincronizada ? 'Sincronizada' : 'Pendiente'}
                       </span>
                     </td>
                     <td>
-                      {!e.sincronizada && (
-                        <button className="action-btn edit" onClick={() => marcarSincronizada(e)}>Sincronizar</button>
+                      {!evaluacion.sincronizada && (
+                        <button className="action-btn edit" onClick={() => marcarSincronizada(evaluacion)}>Sincronizar</button>
                       )}
-                      <button className="action-btn edit" onClick={() => abrirEditar(e)}>Editar</button>
+                      <button className="action-btn edit" onClick={() => abrirEditar(evaluacion)}>Editar</button>
                       {puedeEliminar && (
-                        <button className="action-btn delete" onClick={() => handleEliminar(e)}>Eliminar</button>
+                        <button className="action-btn delete" onClick={() => handleEliminar(evaluacion)}>Eliminar</button>
                       )}
                     </td>
                   </tr>

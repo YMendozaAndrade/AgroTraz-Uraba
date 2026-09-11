@@ -214,7 +214,7 @@ function Dashboard() {
             ))}
           </select>
         </div>
-        <button className="info-note" style={{ marginLeft: 'auto' }} onClick={() => navigate('/reportes')}>
+        <button className="btn-primary" style={{ marginLeft: 'auto' }} onClick={() => navigate('/reportes')}>
           Ir a reportes →
         </button>
       </div>

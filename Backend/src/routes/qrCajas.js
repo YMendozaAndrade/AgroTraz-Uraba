@@ -150,6 +150,7 @@ router.post('/', rolesGestion, async (req, res) => {
 router.get('/traza/:codigo', async (req, res) => {
   const { codigo } = req.params;
   try {
+    const esAdmin = req.usuario.rol === 'administrador' || req.usuario.rol === 'gerente';
     const [qrs] = await pool.query(
       `SELECT q.*, l.nombre AS lote, f.nombre AS finca, u.nombre AS generado_por,
               l.tipo_siembra
@@ -157,8 +158,9 @@ router.get('/traza/:codigo', async (req, res) => {
        JOIN lotes l ON l.id_lote = q.id_lote
        JOIN fincas f ON f.id_finca = q.id_finca
        JOIN usuarios u ON u.id_usuario = q.id_usuario
+       ${esAdmin ? '' : 'JOIN usuario_finca uf ON uf.id_finca = q.id_finca AND uf.id_usuario = ?'}
        WHERE q.codigo = ?`,
-      [codigo]
+      esAdmin ? [codigo] : [req.usuario.id_usuario, codigo]
     );
     if (qrs.length === 0) {
       return res.status(404).json({ status: 'error', message: 'Código QR no encontrado' });

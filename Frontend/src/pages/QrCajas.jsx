@@ -10,6 +10,26 @@ const TIPOS_EMPAQUE = [
 
 const TIPO_LABEL = Object.fromEntries(TIPOS_EMPAQUE.map((t) => [t.valor, t.label]));
 
+const LOTES_BLOQUEADOS = ['carencia', 'restringido', 'cuarentena'];
+
+function loteApto(l) {
+  return l.activo !== false && !LOTES_BLOQUEADOS.includes(l.estado_efectivo || l.estado);
+}
+
+function motivoBloqueo(l) {
+  const estado = l.estado_efectivo || l.estado;
+  switch (estado) {
+    case 'carencia':
+      return `En carencia${l.carencia_hasta ? ` hasta ${String(l.carencia_hasta).slice(0, 10)}` : ''}`;
+    case 'restringido':
+      return 'Restringido';
+    case 'cuarentena':
+      return 'En cuarentena';
+    default:
+      return !l.activo && l.activo !== undefined ? 'Inactivo' : '';
+  }
+}
+
 function QrCajas() {
   const [codigos, setCodigos] = useState([]);
   const [lotes, setLotes] = useState([]);
@@ -47,8 +67,9 @@ function QrCajas() {
   }, []);
 
   function abrirCrearQr() {
+    const primerApto = lotes.find((l) => loteApto(l));
     setFormQr({
-      id_lote: lotes.length > 0 ? lotes[0].id_lote : '',
+      id_lote: primerApto ? primerApto.id_lote : '',
       fecha_proceso: new Date().toISOString().slice(0, 10),
       hora_proceso: new Date().toTimeString().slice(0, 5),
       peso_neto: '',
@@ -329,7 +350,13 @@ function QrCajas() {
                   <select name="id_lote" value={formQr.id_lote} onChange={handleChange(setFormQr)} required>
                     <option value="">Seleccione un lote</option>
                     {lotes.map((l) => (
-                      <option key={l.id_lote} value={l.id_lote}>{l.finca} / {l.nombre} ({l.estado})</option>
+                      <option
+                        key={l.id_lote}
+                        value={l.id_lote}
+                        disabled={!loteApto(l)}
+                      >
+                        {l.finca} / {l.nombre} ({loteApto(l) ? l.estado_efectivo || l.estado : motivoBloqueo(l)})
+                      </option>
                     ))}
                   </select>
                 </div>

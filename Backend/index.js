@@ -39,7 +39,7 @@ app.get('/api/health', async (req, res) => {
     res.json({ status: 'ok', db: 'conectada', resultado: rows[0].resultado });
   } catch (err) {
     console.error('Error de conexión a la BD:', err.message);
-    res.status(500).json({ status: 'error', db: 'no conectada', error: err.message });
+    res.status(500).json({ status: 'error', db: 'no conectada', error: 'Error de conexión con la base de datos' });
   }
 });
 
