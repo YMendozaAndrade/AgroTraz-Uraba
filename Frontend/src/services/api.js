@@ -47,8 +47,10 @@ export const lotesApi = {
 };
 
 export const usuariosApi = {
-  listar: () => request('/usuarios'),
-  crear: (usuario) => request('/usuarios', 'POST', usuario)
+  listar: (incluirInactivos = false) => request(`/usuarios${incluirInactivos ? '?incluir_inactivos=true' : ''}`),
+  crear: (usuario) => request('/usuarios', 'POST', usuario),
+  cambiarRol: (id, rol) => request(`/usuarios/${id}/rol`, 'PUT', { rol }),
+  cambiarEstado: (id, activo) => request(`/usuarios/${id}/estado`, 'PUT', { activo })
 };
 
 export const asignacionesApi = {

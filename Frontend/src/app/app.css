@@ -96,7 +96,7 @@
 
 .app-topbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 20px;
 }
@@ -588,6 +588,125 @@
 .badge-ejecutada { background: #dcefe0; color: #1f6b3c; }
 .badge-cancelada { background: #e8e6e1; color: #6f6a62; }
 
+/* ---------- Acordeón de usuarios ---------- */
+.accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.accordion-item {
+  background: #fff;
+  border: 1px solid #e6dfd2;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(70, 60, 40, 0.04);
+}
+
+.accordion-item.open {
+  border-color: #bcd6c2;
+  box-shadow: 0 3px 12px rgba(22, 40, 28, 0.08);
+}
+
+.accordion-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  color: #25312a;
+}
+
+.accordion-head:hover {
+  background: #f8f6f0;
+}
+
+.accordion-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6fae56, #3f7d3a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.accordion-nombre {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+
+.accordion-flecha {
+  color: #5c7064;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.accordion-body {
+  padding: 16px 18px;
+  border-top: 1px solid #ece6da;
+  background: #fbfaf6;
+}
+
+.accordion-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 22px;
+  margin-bottom: 16px;
+}
+
+.accordion-datos div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.accordion-datos span {
+  font-size: 12px;
+  color: #5c7064;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.accordion-datos strong {
+  font-size: 14px;
+  color: #1d3b2a;
+  word-break: break-word;
+}
+
+.accordion-cambiar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.accordion-cambiar label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2f5a3e;
+}
+
+.accordion-cambiar select {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid #dfd9cd;
+  background: #fff;
+  font-size: 14px;
+  min-width: 230px;
+}
+
 /* ---------- Botones de acción ---------- */
 .action-btn {
   padding: 6px 12px;
@@ -729,6 +848,18 @@
 }
 
 .btn-danger:hover { background: #fbe4e4; }
+
+.btn-light {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #cfdbc9;
+  background: #eef5ec;
+  color: #2f6b3a;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-light:hover { background: #e0eee0; }
 
 .page-head-acciones {
   display: flex;
