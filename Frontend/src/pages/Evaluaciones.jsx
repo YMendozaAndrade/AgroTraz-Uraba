@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { evaluacionesApi, lotesApi } from '../services/api';
+import { hoyLocal } from '../utils/fecha';
 
 const TIPOS = [
   { valor: 'sigatoka', label: 'Sigatoka' },
@@ -13,6 +14,7 @@ function Evaluaciones() {
   const [lotes, setLotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [detalle, setDetalle] = useState(null);
   const [editar, setEditar] = useState(null);
   const [form, setForm] = useState({
     id_lote: '', tipo_evaluacion: 'sigatoka', fecha_evaluacion: '',
@@ -41,7 +43,7 @@ function Evaluaciones() {
     cargarTodo();
   }, []);
 
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyLocal();
 
   function abrirCrear() {
     setEditar(null);
@@ -79,6 +81,49 @@ function Evaluaciones() {
   function handleChange(e) {
     const next = { ...form, [e.target.name]: e.target.value };
     setForm(next);
+  }
+
+  function procesarImagenArchivo(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1280;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            const escala = Math.min(MAX / width, MAX / height);
+            width = Math.round(width * escala);
+            height = Math.round(height * escala);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleImagen(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Seleccione un archivo de imagen');
+      return;
+    }
+    try {
+      const dataUrl = await procesarImagenArchivo(file);
+      setForm((f) => ({ ...f, fotografia_url: dataUrl }));
+    } catch {
+      setError('No se pudo procesar la imagen');
+    }
+    e.target.value = '';
   }
 
   function obtenerUbicacion() {
@@ -188,7 +233,7 @@ function Evaluaciones() {
               </thead>
               <tbody>
                 {evaluaciones.map((evaluacion) => (
-                  <tr key={evaluacion.id_evaluacion}>
+                  <tr key={evaluacion.id_evaluacion} className="fila-clicable" onClick={() => setDetalle(evaluacion)}>
                     <td>{evaluacion.fecha_evaluacion.slice(0, 10)}</td>
                     <td>{evaluacion.hora_evaluacion ? evaluacion.hora_evaluacion.slice(0, 5) : '—'}</td>
                     <td>
@@ -207,7 +252,7 @@ function Evaluaciones() {
                         {evaluacion.sincronizada ? 'Sincronizada' : 'Pendiente'}
                       </span>
                     </td>
-                    <td>
+                    <td onClick={(ev) => ev.stopPropagation()}>
                       {!evaluacion.sincronizada && (
                         <button className="action-btn edit" onClick={() => marcarSincronizada(evaluacion)}>Sincronizar</button>
                       )}
@@ -284,9 +329,15 @@ function Evaluaciones() {
                   <label>Longitud</label>
                   <input name="longitud" value={form.longitud} onChange={handleChange} placeholder="Ej. -76.7000000" />
                 </div>
-                <div className="form-field-modal">
-                  <label>URL de la fotografía</label>
-                  <input name="fotografia_url" value={form.fotografia_url} onChange={handleChange} placeholder="Opcional" />
+                <div className="form-field-modal full">
+                  <label>Fotografía</label>
+                  <input type="file" accept="image/*" onChange={handleImagen} />
+                  {form.fotografia_url && (
+                    <div className="foto-preview">
+                      <img src={form.fotografia_url} alt="Vista previa de la fotografía" />
+                      <button type="button" className="btn-cancel" onClick={() => setForm((f) => ({ ...f, fotografia_url: '' }))}>Quitar foto</button>
+                    </div>
+                  )}
                 </div>
                 <div className="form-field-modal" style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button type="button" className="btn-cancel" onClick={obtenerUbicacion}>Usar mi ubicación</button>
@@ -299,6 +350,92 @@ function Evaluaciones() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {detalle && (
+        <div className="modal-overlay" onClick={() => setDetalle(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Detalle de la evaluación</h3>
+            <div className="detalle-grid">
+              <div className="detalle-item">
+                <span>Tipo</span>
+                <strong>{TIPOS.find((t) => t.valor === detalle.tipo_evaluacion)?.label || detalle.tipo_evaluacion}</strong>
+              </div>
+              <div className="detalle-item">
+                <span>Fecha</span>
+                <strong>{detalle.fecha_evaluacion.slice(0, 10)}</strong>
+              </div>
+              <div className="detalle-item">
+                <span>Hora</span>
+                <strong>{detalle.hora_evaluacion ? detalle.hora_evaluacion.slice(0, 5) : '—'}</strong>
+              </div>
+              <div className="detalle-item">
+                <span>Lote</span>
+                <strong>{detalle.lote}</strong>
+              </div>
+              <div className="detalle-item">
+                <span>Finca</span>
+                <strong>{detalle.finca}</strong>
+              </div>
+              <div className="detalle-item">
+                <span>Evaluador</span>
+                <strong>{detalle.evaluador}</strong>
+              </div>
+              <div className="detalle-item">
+                <span>Latitud</span>
+                <strong>{detalle.latitud ?? '—'}</strong>
+              </div>
+              <div className="detalle-item">
+                <span>Longitud</span>
+                <strong>{detalle.longitud ?? '—'}</strong>
+              </div>
+              {detalle.tipo_evaluacion === 'sigatoka' && (
+                <>
+                  <div className="detalle-item">
+                    <span>YHA</span>
+                    <strong>{detalle.yha ?? '—'}</strong>
+                  </div>
+                  <div className="detalle-item">
+                    <span>Índice de severidad</span>
+                    <strong>{detalle.indice_severidad ?? '—'}%</strong>
+                  </div>
+                </>
+              )}
+              {detalle.tipo_evaluacion === 'moko_fusarium' && (
+                <div className="detalle-item">
+                  <span>Índice de severidad</span>
+                  <strong>{detalle.indice_severidad ?? '—'}%</strong>
+                </div>
+              )}
+              {detalle.tipo_evaluacion === 'picudo' && (
+                <div className="detalle-item">
+                  <span>Adultos capturados</span>
+                  <strong>{detalle.numero_adultos ?? '—'}</strong>
+                </div>
+              )}
+              <div className="detalle-item">
+                <span>Sincronización</span>
+                <strong>
+                  <span className={`badge ${detalle.sincronizada ? 'badge-disponible' : 'badge-restringido'}`}>
+                    {detalle.sincronizada ? 'Sincronizada' : 'Pendiente'}
+                  </span>
+                </strong>
+              </div>
+            </div>
+            <div className="detalle-foto">
+              <span>Fotografía</span>
+              {detalle.fotografia_url ? (
+                <img src={detalle.fotografia_url} alt="Fotografía de la evaluación" />
+              ) : (
+                <p className="info-note">Esta evaluación no tiene fotografía registrada.</p>
+              )}
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn-cancel" onClick={() => setDetalle(null)}>Cerrar</button>
+              <button type="button" className="btn-save" onClick={() => { const d = detalle; setDetalle(null); abrirEditar(d); }}>Editar</button>
+            </div>
           </div>
         </div>
       )}

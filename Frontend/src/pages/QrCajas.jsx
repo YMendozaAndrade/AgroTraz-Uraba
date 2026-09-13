@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { qrCajasApi, lotesApi } from '../services/api';
+import { hoyLocal } from '../utils/fecha';
 
 const TIPOS_EMPAQUE = [
   { valor: 'carton_22', label: 'Cartón 22 kg' },
@@ -70,7 +71,7 @@ function QrCajas() {
     const primerApto = lotes.find((l) => loteApto(l));
     setFormQr({
       id_lote: primerApto ? primerApto.id_lote : '',
-      fecha_proceso: new Date().toISOString().slice(0, 10),
+      fecha_proceso: hoyLocal(),
       hora_proceso: new Date().toTimeString().slice(0, 5),
       peso_neto: '',
       codigo_ica_finca: ''
@@ -120,7 +121,7 @@ function QrCajas() {
       id_lote: q.id_lote,
       peso_bruto: '',
       tipo_empaque: 'carton_22',
-      fecha_empaque: new Date().toISOString().slice(0, 10),
+      fecha_empaque: hoyLocal(),
       hora_empaque: new Date().toTimeString().slice(0, 5)
     });
     setError('');

@@ -11,6 +11,7 @@ import {
   asignacionesApi,
   reportesApi
 } from '../services/api';
+import { fechaLocal, hoyLocal } from '../utils/fecha';
 
 const SECCIONES = [
   { id: 'produccion', titulo: 'Producción' },
@@ -50,13 +51,13 @@ const TIPO_REPORTE_LABEL = {
 };
 
 function hoyISO() {
-  return new Date().toISOString().slice(0, 10);
+  return hoyLocal();
 }
 
 function haceDias(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return fechaLocal(d);
 }
 
 function Cabecera({ titulo, usuario, global }) {

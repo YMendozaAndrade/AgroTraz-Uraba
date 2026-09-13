@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { aplicacionesApi, lotesApi, agroquimicosApi } from '../services/api';
+import { fechaLocal, hoyLocal } from '../utils/fecha';
 
 function Aplicaciones() {
   const [aplicaciones, setAplicaciones] = useState([]);
@@ -37,7 +38,7 @@ function Aplicaciones() {
     if (!agro || !fecha) return '';
     const d = new Date(`${fecha}T00:00:00`);
     d.setDate(d.getDate() + Number(agro.dias_carencia));
-    return d.toISOString().slice(0, 10);
+    return fechaLocal(d);
   }
 
   function abrirCrear() {
@@ -45,7 +46,7 @@ function Aplicaciones() {
     setForm({
       id_lote: lotes.length > 0 ? lotes[0].id_lote : '',
       id_agroquimico: agroquimicos.length > 0 ? agroquimicos[0].id_agroquimico : '',
-      fecha_aplicacion: new Date().toISOString().slice(0, 10),
+      fecha_aplicacion: hoyLocal(),
       dosis_aplicada: '',
       observaciones: ''
     });
@@ -112,7 +113,7 @@ function Aplicaciones() {
     }
   }
 
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyLocal();
 
   function enCarencia(a) {
     return a.fecha_fin_carencia.slice(0, 10) > hoy;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { ordenesCorteApi, lotesApi } from '../services/api';
+import { hoyLocal } from '../utils/fecha';
 
 function OrdenesCorte() {
   const [ordenes, setOrdenes] = useState([]);
@@ -29,14 +30,14 @@ function OrdenesCorte() {
   }, []);
 
   function esHoyOPróximo(fecha) {
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     return fecha >= hoy;
   }
 
   function abrirCrear() {
     setForm({
       id_lote: lotes.length > 0 ? lotes[0].id_lote : '',
-      fecha_corte: new Date().toISOString().slice(0, 10),
+      fecha_corte: hoyLocal(),
       observaciones: ''
     });
     setError('');

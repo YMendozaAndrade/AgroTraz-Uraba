@@ -9,6 +9,7 @@ import {
   ordenesCorteApi,
   qrCajasApi
 } from '../services/api';
+import { fechaLocal, hoyLocal } from '../utils/fecha';
 
 const ACCESO_RAPIDO = [
   { to: '/fincas', titulo: 'Fincas', descripcion: 'Catastro, códigos ICA y responsables', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
@@ -26,13 +27,13 @@ function fechaCorta(f) {
 }
 
 function hoyISO() {
-  return new Date().toISOString().slice(0, 10);
+  return hoyLocal();
 }
 
 function haceDias(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return fechaLocal(d);
 }
 
 function Dashboard() {

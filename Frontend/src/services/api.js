@@ -1,4 +1,4 @@
-const BASE_URL = '/api';
+const BASE_URL = 'https://agrotraz-backend.onrender.com';
 
 function getToken() {
   return localStorage.getItem('token');
