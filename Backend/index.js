@@ -31,10 +31,6 @@ app.use('/api/evaluaciones', evaluacionesRoutes);
 app.use('/api/qr', qrCajasRoutes);
 app.use('/api/reportes', reportesRoutes);
 
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'API AgroTraz Uraba' });
-});
-
 app.get('/api/health', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT 1 + 1 AS resultado');
