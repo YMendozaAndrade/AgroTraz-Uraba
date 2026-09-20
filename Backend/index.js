@@ -45,6 +45,19 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+const path = require('path');
+const distDir = path.join(__dirname, '..', 'Frontend', 'dist');
+const fs = require('fs');
+
+app.use(express.static(distDir));
+
+if (fs.existsSync(distDir)) {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`Servidor AgroTraz Uraba corriendo en http://localhost:${PORT}`);
   console.log(`MariaDB/MySQL en ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
