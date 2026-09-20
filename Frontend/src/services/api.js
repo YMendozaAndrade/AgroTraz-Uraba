@@ -31,7 +31,9 @@ export const authApi = {
   login: (email, password) => request('/auth/login', 'POST', { email, password }),
   register: (usuario) => request('/auth/register', 'POST', usuario),
   cambiarPassword: (password_actual, password_nueva) =>
-    request('/auth/cambiar-password', 'POST', { password_actual, password_nueva })
+    request('/auth/cambiar-password', 'POST', { password_actual, password_nueva }),
+  recuperar: (email) => request('/auth/recuperar', 'POST', { email }),
+  restablecer: (token, password_nueva) => request('/auth/restablecer', 'POST', { token, password_nueva })
 };
 
 export const fincasApi = {

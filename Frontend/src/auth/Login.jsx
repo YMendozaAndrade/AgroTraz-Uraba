@@ -52,6 +52,9 @@ function Login() {
             required
           />
         </div>
+        <div className="auth-enlace">
+          <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
+        </div>
         <button className="btn-glass" type="submit" disabled={loading}>
           {loading ? 'Ingresando…' : 'Ingresar'}
         </button>

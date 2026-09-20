@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const pool = require('../db');
 const { generarToken, verificarToken } = require('../middleware/auth');
 
@@ -147,6 +148,93 @@ router.post('/cambiar-password', verificarToken, async (req, res) => {
     res.json({ status: 'ok', message: 'Contraseña actualizada correctamente' });
   } catch (err) {
     console.error('Error en cambiar-password:', err.message);
+    res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * Solicita un token de recuperación de contraseña.
+ * Público. Genera un token con expiración de 1 hora y lo devuelve en la respuesta.
+ */
+router.post('/recuperar', async (req, res) => {
+  const { email } = req.body;
+
+  if (!validarEmail(email)) {
+    return res.status(400).json({ status: 'error', message: 'Correo electrónico no válido' });
+  }
+
+  try {
+    const [rows] = await pool.query('SELECT id_usuario FROM usuarios WHERE email = ?', [email]);
+    if (rows.length === 0) {
+      // Respuesta genérica para no revelar si el correo existe
+      return res.json({ status: 'ok', message: 'Si el correo está registrado, recibirá un enlace de recuperación' });
+    }
+
+    const idUsuario = rows[0].id_usuario;
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiraEn = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    await pool.query(
+      'INSERT INTO password_resets (id_usuario, token, expira_en) VALUES (?, ?, ?)',
+      [idUsuario, token, expiraEn]
+    );
+
+    res.json({
+      status: 'ok',
+      message: 'Token de recuperación generado',
+      token,
+      expira_en: expiraEn
+    });
+  } catch (err) {
+    console.error('Error en recuperar:', err.message);
+    res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * Restablece la contraseña con un token de recuperación válido.
+ * Público. Marca el token como usado.
+ */
+router.post('/restablecer', async (req, res) => {
+  const { token, password_nueva } = req.body;
+
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({ status: 'error', message: 'El token es obligatorio' });
+  }
+  if (typeof password_nueva !== 'string' || password_nueva.length < 6) {
+    return res.status(400).json({ status: 'error', message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, id_usuario, expira_en, usado FROM password_resets WHERE token = ?`,
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'Token de recuperación inválido' });
+    }
+
+    const reset = rows[0];
+    if (reset.usado) {
+      return res.status(400).json({ status: 'error', message: 'Este token ya fue utilizado' });
+    }
+    if (new Date(reset.expira_en) < new Date()) {
+      return res.status(400).json({ status: 'error', message: 'El token ha expirado. Solicite uno nuevo' });
+    }
+
+    const [usuario] = await pool.query('SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND activo = TRUE', [reset.id_usuario]);
+    if (usuario.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'Usuario no encontrado o desactivado' });
+    }
+
+    const passwordHash = await bcrypt.hash(password_nueva, 10);
+    await pool.query('UPDATE usuarios SET password_hash = ? WHERE id_usuario = ?', [passwordHash, reset.id_usuario]);
+    await pool.query('UPDATE password_resets SET usado = TRUE WHERE id = ?', [reset.id]);
+
+    res.json({ status: 'ok', message: 'Contraseña restablecida correctamente' });
+  } catch (err) {
+    console.error('Error en restablecer:', err.message);
     res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
   }
 });

@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import Login from './auth/Login';
 import Registro from './auth/Registro';
+import Recuperar from './auth/Recuperar';
+import Restablecer from './auth/Restablecer';
 import Dashboard from './pages/Dashboard';
 import Fincas from './pages/Fincas';
 import Lotes from './pages/Lotes';
@@ -19,6 +21,8 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
+      <Route path="/recuperar" element={<Recuperar />} />
+      <Route path="/restablecer" element={<Restablecer />} />
       <Route
         path="/dashboard"
         element={

@@ -106,6 +106,17 @@
   text-align: center;
 }
 
+.auth-enlace {
+  text-align: center;
+  margin: 10px 0 14px;
+}
+
+.auth-enlace a {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2f7342;
+}
+
 .form-field {
   margin-bottom: 16px;
 }
@@ -177,6 +188,34 @@
 .auth-footer a {
   font-weight: 600;
   color: #2f7342;
+}
+
+.auth-message {
+  background: #e8f3e8;
+  border: 1px solid #c5dfc5;
+  color: #2f5a3e;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.auth-message p {
+  margin: 0 0 8px;
+}
+
+.auth-token {
+  display: block;
+  background: #fff;
+  border: 1px dashed #9cc09c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #1d4d2a;
+  word-break: break-all;
+  margin: 8px 0 12px;
+  user-select: all;
 }
 
 @media (max-width: 760px) {
