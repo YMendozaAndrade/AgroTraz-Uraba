@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
-const { generarToken } = require('../middleware/auth');
+const { generarToken, verificarToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -113,6 +113,40 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Error en login:', err.message);
+    res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
+  }
+});
+
+router.post('/cambiar-password', verificarToken, async (req, res) => {
+  const { password_actual, password_nueva } = req.body;
+
+  if (typeof password_actual !== 'string' || password_actual.length === 0) {
+    return res.status(400).json({ status: 'error', message: 'La contraseña actual es obligatoria' });
+  }
+  if (typeof password_nueva !== 'string' || password_nueva.length < 6) {
+    return res.status(400).json({ status: 'error', message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+  }
+  if (password_nueva === password_actual) {
+    return res.status(400).json({ status: 'error', message: 'La nueva contraseña debe ser diferente a la actual' });
+  }
+
+  try {
+    const [rows] = await pool.query('SELECT password_hash FROM usuarios WHERE id_usuario = ?', [req.usuario.id_usuario]);
+    if (rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
+    }
+
+    const valida = await bcrypt.compare(password_actual, rows[0].password_hash);
+    if (!valida) {
+      return res.status(400).json({ status: 'error', message: 'La contraseña actual es incorrecta' });
+    }
+
+    const passwordHash = await bcrypt.hash(password_nueva, 10);
+    await pool.query('UPDATE usuarios SET password_hash = ? WHERE id_usuario = ?', [passwordHash, req.usuario.id_usuario]);
+
+    res.json({ status: 'ok', message: 'Contraseña actualizada correctamente' });
+  } catch (err) {
+    console.error('Error en cambiar-password:', err.message);
     res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
   }
 });

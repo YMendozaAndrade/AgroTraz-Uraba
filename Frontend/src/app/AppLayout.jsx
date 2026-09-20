@@ -11,7 +11,8 @@ const ICONOS = {
   '/ordenes-corte': 'M4 8h11v9a2 2 0 0 1-2 2H4zM15 10l5-3v9l-5-3',
   '/qr': 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h3v3h-3zM13 16h2M16 13h1M18 13v1M17 16l-1 1M21 13v7h-7',
   '/reportes': 'M4 5h16v14H4zM4 9h16M9 13h6M9 17h4M8 13h.01M12 17h.01',
-  '/usuarios': 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 8v6M20 11h-6'
+  '/usuarios': 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 8v6M20 11h-6',
+  '/perfil': 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8'
 };
 
 const NAV_ITEMS = [
@@ -24,7 +25,8 @@ const NAV_ITEMS = [
   { to: '/ordenes-corte', label: 'Órdenes de corte', roles: ['administrador', 'gerente', 'agronomo'] },
   { to: '/qr', label: 'QR / Cajas', roles: ['administrador', 'gerente', 'agronomo', 'operador_empacadora'] },
   { to: '/usuarios', label: 'Usuarios', roles: ['administrador', 'gerente'] },
-  { to: '/reportes', label: 'Reportes', roles: ['administrador', 'gerente', 'agronomo'] }
+  { to: '/reportes', label: 'Reportes', roles: ['administrador', 'gerente', 'agronomo'] },
+  { to: '/perfil', label: 'Mi perfil', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo', 'operador_empacadora'] }
 ];
 
 function AppLayout({ children }) {

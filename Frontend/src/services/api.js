@@ -29,7 +29,9 @@ async function request(path, method = 'GET', body = null) {
 
 export const authApi = {
   login: (email, password) => request('/auth/login', 'POST', { email, password }),
-  register: (usuario) => request('/auth/register', 'POST', usuario)
+  register: (usuario) => request('/auth/register', 'POST', usuario),
+  cambiarPassword: (password_actual, password_nueva) =>
+    request('/auth/cambiar-password', 'POST', { password_actual, password_nueva })
 };
 
 export const fincasApi = {
