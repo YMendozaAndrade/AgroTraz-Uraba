@@ -14,6 +14,7 @@ import QrCajas from './pages/QrCajas';
 import Reportes from './pages/Reportes';
 import Usuarios from './pages/Usuarios';
 import Perfil from './pages/Perfil';
+import Mapa from './pages/Mapa';
 import RutaProtegida from './app/RutaProtegida';
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
       <Route path="/reportes" element={<RutaProtegida><Reportes /></RutaProtegida>} />
       <Route path="/usuarios" element={<RutaProtegida><Usuarios /></RutaProtegida>} />
       <Route path="/perfil" element={<RutaProtegida><Perfil /></RutaProtegida>} />
+      <Route path="/mapa" element={<RutaProtegida><Mapa /></RutaProtegida>} />
     </Routes>
   );
 }
