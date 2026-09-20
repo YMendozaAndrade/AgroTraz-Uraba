@@ -71,7 +71,8 @@ export const agroquimicosApi = {
 };
 
 export const aplicacionesApi = {
-  listar: () => request('/aplicaciones'),
+  listar: (idLote) => request(`/aplicaciones${idLote ? `?id_lote=${idLote}` : ''}`),
+  alertas: () => request('/aplicaciones/alertas'),
   crear: (aplicacion) => request('/aplicaciones', 'POST', aplicacion),
   actualizar: (id, aplicacion) => request(`/aplicaciones/${id}`, 'PUT', aplicacion),
   eliminar: (id) => request(`/aplicaciones/${id}`, 'DELETE')

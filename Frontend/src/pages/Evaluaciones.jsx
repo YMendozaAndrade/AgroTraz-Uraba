@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { evaluacionesApi, lotesApi } from '../services/api';
 import { hoyLocal } from '../utils/fecha';
+import { descargarCSV } from '../utils/csv';
 
 const TIPOS = [
   { valor: 'sigatoka', label: 'Sigatoka' },
@@ -200,9 +201,38 @@ function Evaluaciones() {
       )}
       <div className="page-head">
         <h2>Evaluaciones fitosanitarias</h2>
-        <button className="btn-primary" onClick={abrirCrear}>
-          + Nueva evaluación
-        </button>
+        <div className="page-head-acciones">
+          {evaluaciones.length > 0 && (
+            <button
+              className="btn-cancel"
+              onClick={() =>
+                descargarCSV(
+                  evaluaciones,
+                  [
+                    { key: 'fecha_evaluacion', label: 'Fecha' },
+                    { key: 'hora_evaluacion', label: 'Hora' },
+                    { key: 'finca', label: 'Finca' },
+                    { key: 'lote', label: 'Lote' },
+                    { key: 'tipo_evaluacion', label: 'Tipo' },
+                    { key: 'evaluador', label: 'Evaluador' },
+                    { key: 'yha', label: 'YHA' },
+                    { key: 'indice_severidad', label: 'Severidad (%)' },
+                    { key: 'numero_adultos', label: 'Adultos capturados' },
+                    { key: 'latitud', label: 'Latitud' },
+                    { key: 'longitud', label: 'Longitud' },
+                    { key: 'sincronizada', label: 'Sincronizada' }
+                  ],
+                  `evaluaciones-${hoyLocal()}.csv`
+                )
+              }
+            >
+              ⬇ Exportar CSV
+            </button>
+          )}
+          <button className="btn-primary" onClick={abrirCrear}>
+            + Nueva evaluación
+          </button>
+        </div>
       </div>
 
       {error && !loading && <div className="alert alert-error">{error}</div>}

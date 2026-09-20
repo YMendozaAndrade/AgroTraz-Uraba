@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { fincasApi, usuariosApi, asignacionesApi } from '../services/api';
+import { hoyLocal } from '../utils/fecha';
+import { descargarCSV } from '../utils/csv';
 
 const VACIO = {
   nombre: '',
@@ -205,11 +207,36 @@ function Fincas() {
       )}
       <div className="page-head">
         <h2>Fincas registradas</h2>
-        {puedeGestionar && (
-          <button className="btn-primary" onClick={abrirCrear}>
-            + Nueva finca
-          </button>
-        )}
+        <div className="page-head-acciones">
+          {fincas.length > 0 && (
+            <button
+              className="btn-cancel"
+              onClick={() =>
+                descargarCSV(
+                  fincas,
+                  [
+                    { key: 'nombre', label: 'Nombre' },
+                    { key: 'codigo_ica', label: 'Código ICA' },
+                    { key: 'municipio', label: 'Municipio' },
+                    { key: 'area_hectareas', label: 'Área (ha)' },
+                    { key: 'latitud', label: 'Latitud' },
+                    { key: 'longitud', label: 'Longitud' },
+                    { key: 'encargado_responsable', label: 'Encargado' },
+                    { key: 'activo', label: 'Activo' }
+                  ],
+                  `fincas-${hoyLocal()}.csv`
+                )
+              }
+            >
+              ⬇ Exportar CSV
+            </button>
+          )}
+          {puedeGestionar && (
+            <button className="btn-primary" onClick={abrirCrear}>
+              + Nueva finca
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="panel-card">

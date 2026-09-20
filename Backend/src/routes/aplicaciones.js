@@ -53,6 +53,43 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * Alertas de carencia: aplicaciones con carencia aún vigente (fecha_fin_carencia >= hoy)
+ * con los días restantes, ordenadas por urgencia. Respeta las fincas asignadas al usuario.
+ */
+router.get('/alertas', verificarToken, async (req, res) => {
+  try {
+    const hoy = new Date().toISOString().slice(0, 10);
+    let query = `
+      SELECT a.id_aplicacion, a.id_lote, a.id_agroquimico,
+             l.nombre AS lote, f.nombre AS finca, q.nombre AS agroquimico,
+             q.dias_carencia, a.fecha_aplicacion, a.fecha_fin_carencia,
+             DATEDIFF(a.fecha_fin_carencia, ?) AS dias_restantes
+      FROM aplicaciones a
+      JOIN lotes l ON l.id_lote = a.id_lote
+      JOIN fincas f ON f.id_finca = l.id_finca
+      JOIN agroquimicos q ON q.id_agroquimico = a.id_agroquimico
+      WHERE a.fecha_fin_carencia >= ?
+    `;
+    const params = [hoy, hoy];
+
+    if (req.usuario.rol !== 'administrador' && req.usuario.rol !== 'gerente') {
+      query += `
+        AND EXISTS (
+          SELECT 1 FROM usuario_finca uf WHERE uf.id_finca = l.id_finca AND uf.id_usuario = ?
+        )`;
+      params.push(req.usuario.id_usuario);
+    }
+
+    query += ' ORDER BY a.fecha_fin_carencia ASC, a.id_aplicacion DESC';
+    const [rows] = await pool.query(query, params);
+    res.json({ status: 'ok', alertas: rows });
+  } catch (err) {
+    console.error('Error listando alertas de carencia:', err.message);
+    res.status(500).json({ status: 'error', message: 'Error interno del servidor' });
+  }
+});
+
 router.post('/', rolesGestion, async (req, res) => {
   const { id_lote, id_agroquimico, fecha_aplicacion, dosis_aplicada, observaciones } = req.body;
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { aplicacionesApi, lotesApi, agroquimicosApi } from '../services/api';
 import { fechaLocal, hoyLocal } from '../utils/fecha';
+import { descargarCSV } from '../utils/csv';
 
 function Aplicaciones() {
   const [aplicaciones, setAplicaciones] = useState([]);
@@ -15,13 +16,20 @@ function Aplicaciones() {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [error, setError] = useState('');
+  const [alertas, setAlertas] = useState([]);
 
   async function cargarTodo() {
     try {
-      const [a, l, q] = await Promise.all([aplicacionesApi.listar(), lotesApi.listar(), agroquimicosApi.listar()]);
+      const [a, l, q, al] = await Promise.all([
+        aplicacionesApi.listar(),
+        lotesApi.listar(),
+        agroquimicosApi.listar(),
+        aplicacionesApi.alertas().catch(() => ({ alertas: [] }))
+      ]);
       setAplicaciones(a.aplicaciones);
       setLotes(l.lotes);
       setAgroquimicos(q.agroquimicos);
+      setAlertas(al.alertas || []);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -128,10 +136,83 @@ function Aplicaciones() {
       )}
       <div className="page-head">
         <h2>Aplicaciones</h2>
-        <button className="btn-primary" onClick={abrirCrear}>
-          + Registrar aplicación
-        </button>
+        <div className="page-head-acciones">
+          {aplicaciones.length > 0 && (
+            <button
+              className="btn-cancel"
+              onClick={() =>
+                descargarCSV(
+                  aplicaciones,
+                  [
+                    { key: 'fecha_aplicacion', label: 'Fecha' },
+                    { key: 'finca', label: 'Finca' },
+                    { key: 'lote', label: 'Lote' },
+                    { key: 'agroquimico', label: 'Agroquímico' },
+                    { key: 'registro_ica', label: 'Registro ICA' },
+                    { key: 'dosis_aplicada', label: 'Dosis' },
+                    { key: 'dias_carencia', label: 'Carencia (días)' },
+                    { key: 'fecha_fin_carencia', label: 'Fin de carencia' },
+                    { key: 'registrado_por', label: 'Registrado por' },
+                    { key: 'observaciones', label: 'Observaciones' }
+                  ],
+                  `aplicaciones-${hoyLocal()}.csv`
+                )
+              }
+            >
+              ⬇ Exportar CSV
+            </button>
+          )}
+          <button className="btn-primary" onClick={abrirCrear}>
+            + Registrar aplicación
+          </button>
+        </div>
       </div>
+
+      {alertas.length > 0 && (
+        <div className="panel-card panel-alertas">
+          <h3>⏰ Carencias vigentes</h3>
+          <p className="rep-dim">
+            Lotes que aún no pueden cosecharse ni empacarse. La carencia caduca en la fecha indicada.
+          </p>
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Lote</th>
+                  <th>Finca</th>
+                  <th>Agroquímico</th>
+                  <th>Aplicado el</th>
+                  <th>Fin de carencia</th>
+                  <th>Días restantes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alertas.map((a) => {
+                  const dias = Number(a.dias_restantes);
+                  const clase =
+                    dias <= 2 ? 'badge-cuarentena' : dias <= 7 ? 'badge-restringido' : 'badge-disponible';
+                  const texto =
+                    dias <= 2 ? `¡Vence en ${dias} día${dias === 1 ? '' : 's'}!` :
+                    dias <= 7 ? `Vence en ${dias} días` :
+                    `${dias} días restantes`;
+                  return (
+                    <tr key={a.id_aplicacion}>
+                      <td>{a.lote}</td>
+                      <td>{a.finca}</td>
+                      <td>{a.agroquimico}</td>
+                      <td>{a.fecha_aplicacion.slice(0, 10)}</td>
+                      <td>{a.fecha_fin_carencia.slice(0, 10)}</td>
+                      <td>
+                        <span className={`badge ${clase}`}>{texto}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="panel-card">
         {loading ? (

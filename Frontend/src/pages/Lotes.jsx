@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '../app/AppLayout';
 import { lotesApi, fincasApi } from '../services/api';
+import { hoyLocal } from '../utils/fecha';
+import { descargarCSV } from '../utils/csv';
 
 const VACIO = {
   id_finca: '',
@@ -116,11 +118,37 @@ function Lotes() {
       )}
       <div className="page-head">
         <h2>Lotes registrados</h2>
-        {puedeGestionar && (
-          <button className="btn-primary" onClick={abrirCrear}>
-            + Nuevo lote
-          </button>
-        )}
+        <div className="page-head-acciones">
+          {lotes.length > 0 && (
+            <button
+              className="btn-cancel"
+              onClick={() =>
+                descargarCSV(
+                  lotes,
+                  [
+                    { key: 'finca', label: 'Finca' },
+                    { key: 'nombre', label: 'Lote' },
+                    { key: 'tipo_siembra', label: 'Tipo de siembra' },
+                    { key: 'area_hectareas', label: 'Área (ha)' },
+                    { key: 'densidad_plantas', label: 'Densidad (plantas/ha)' },
+                    { key: 'estado', label: 'Estado' },
+                    { key: 'estado_efectivo', label: 'Estado efectivo' },
+                    { key: 'carencia_agroquimico', label: 'Carencia agroquímico' },
+                    { key: 'carencia_hasta', label: 'Carencia hasta' }
+                  ],
+                  `lotes-${hoyLocal()}.csv`
+                )
+              }
+            >
+              ⬇ Exportar CSV
+            </button>
+          )}
+          {puedeGestionar && (
+            <button className="btn-primary" onClick={abrirCrear}>
+              + Nuevo lote
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="panel-card">
