@@ -12,6 +12,7 @@ const ordenesCorteRoutes = require('./src/routes/ordenesCorte');
 const evaluacionesRoutes = require('./src/routes/evaluaciones');
 const qrCajasRoutes = require('./src/routes/qrCajas');
 const reportesRoutes = require('./src/routes/reportes');
+const trazaPublicaRoutes = require('./src/routes/trazaPublica');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +31,10 @@ app.use('/api/ordenes-corte', ordenesCorteRoutes);
 app.use('/api/evaluaciones', evaluacionesRoutes);
 app.use('/api/qr', qrCajasRoutes);
 app.use('/api/reportes', reportesRoutes);
+
+// Trazabilidad pública (sin login): la abre cualquier celular al escanear el QR.
+// Debe ir antes del fallback SPA para que no la intercepte el index.html.
+app.use('/traza', trazaPublicaRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {

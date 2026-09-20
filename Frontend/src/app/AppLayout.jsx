@@ -35,7 +35,14 @@ function AppLayout({ children }) {
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 
-  const itemsVisibles = NAV_ITEMS.filter((item) => item.roles.includes(usuario.rol));
+  // TEMPORAL - fase de verificación: todo visible solo para administración.
+  // Poner en false para reactivar el acceso por roles.
+  const SOLO_ADMIN = true;
+  const esAdmin = usuario.rol === 'administrador';
+
+  const itemsVisibles = SOLO_ADMIN
+    ? NAV_ITEMS.filter((item) => item.roles.includes('administrador'))
+    : NAV_ITEMS.filter((item) => item.roles.includes(usuario.rol));
 
   function handleLogout() {
     localStorage.removeItem('token');
@@ -83,6 +90,11 @@ function AppLayout({ children }) {
           </div>
         </div>
         {children}
+        {SOLO_ADMIN && !esAdmin && (
+          <div className="alert alert-error" style={{ marginTop: 16 }}>
+            Módulos en verificación: el acceso está habilitado temporalmente solo para administración.
+          </div>
+        )}
       </main>
     </div>
   );

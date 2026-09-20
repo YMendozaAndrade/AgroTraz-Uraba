@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 
 const SECRETO = process.env.JWT_SECRET;
 
+// TEMPORAL - fase de verificación: toda la API queda disponible solo para
+// el rol administrador. Poner en false para reactivar el acceso por roles.
+const SOLO_ADMIN = true;
+
 if (!SECRETO || SECRETO.length < 16) {
   console.error('ADVERTENCIA CRÍTICA: JWT_SECRET no definido o muy corto. Los tokens son inseguros.');
 }
@@ -21,6 +25,9 @@ function verificarToken(req, res, next) {
   }
   try {
     req.usuario = jwt.verify(header.split(' ')[1], SECRETO);
+    if (SOLO_ADMIN && req.usuario.rol !== 'administrador') {
+      return res.status(403).json({ status: 'error', message: 'Acceso temporal solo para administración (fase de verificación)' });
+    }
     next();
   } catch (err) {
     return res.status(401).json({ status: 'error', message: 'Token inválido o expirado' });

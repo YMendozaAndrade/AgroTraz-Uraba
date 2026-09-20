@@ -35,9 +35,9 @@ function Mapa() {
     cargarFincas();
   }, []);
 
-  // Crear el mapa una sola vez
+  // Crear el mapa una vez que el contenedor existe (después de cargar)
   useEffect(() => {
-    if (!contenedorRef.current || mapaRef.current) return;
+    if (loading || !contenedorRef.current || mapaRef.current) return;
 
     const mapa = L.map(contenedorRef.current, {
       center: [7.9403, -76.3204], // región de Urabá
@@ -58,7 +58,7 @@ function Mapa() {
       mapaRef.current = null;
       capasRef.current = null;
     };
-  }, []);
+  }, [loading]);
 
   const guardarCoordenadas = useCallback(async (idFinca, lat, lng) => {
     setGuardando(true);

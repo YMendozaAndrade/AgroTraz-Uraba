@@ -1,7 +1,12 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 import AppLayout from '../app/AppLayout';
 import { qrCajasApi, lotesApi } from '../services/api';
 import { hoyLocal } from '../utils/fecha';
+
+// URL pública que codifica el QR: al escanearla cualquier celular abre la
+// trazabilidad completa sin necesidad de login.
+const TRAZA_BASE = 'https://agrotraz-backend.onrender.com/traza/';
 
 const TIPOS_EMPAQUE = [
   { valor: 'carton_22', label: 'Cartón 22 kg' },
@@ -51,6 +56,9 @@ function QrCajas() {
   const [traza, setTraza] = useState(null);
   const [buscando, setBuscando] = useState(false);
 
+  const [qrVer, setQrVer] = useState(null); // { codigo } para mostrar el QR generado
+  const qrFiguraRef = useRef(null);
+
   async function cargarTodo() {
     try {
       const [q, l] = await Promise.all([qrCajasApi.listar(), lotesApi.listar()]);
@@ -92,11 +100,31 @@ function QrCajas() {
       const res = await qrCajasApi.crear({ ...formQr, peso_neto: Number(formQr.peso_neto), id_lote: Number(formQr.id_lote) });
       setModalQr(false);
       setMensaje({ tipo: 'success', texto: `Código QR ${res.codigo.codigo} generado` });
+      setQrVer({ codigo: res.codigo.codigo });
       cargarTodo();
     } catch (e2) {
       setError(e2.message);
     } finally {
       setGuardando(false);
+    }
+  }
+
+  function descargarQR() {
+    const canvas = qrFiguraRef.current?.querySelector('canvas');
+    if (!canvas || !qrVer) return;
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `${qrVer.codigo}.png`;
+    a.click();
+  }
+
+  async function copiarEnlaceQR() {
+    if (!qrVer) return;
+    try {
+      await navigator.clipboard.writeText(`${TRAZA_BASE}${qrVer.codigo}`);
+      setMensaje({ tipo: 'success', texto: 'Enlace de trazabilidad copiado' });
+    } catch {
+      setMensaje({ tipo: 'error', texto: 'No se pudo copiar el enlace' });
     }
   }
 
@@ -307,6 +335,7 @@ function QrCajas() {
                         </span>
                       </td>
                       <td>
+                        <button className="action-btn edit" onClick={() => setQrVer({ codigo: q.codigo })}>Ver QR</button>
                         <button className="action-btn edit" onClick={() => toggleExpandir(q)}>
                           {expandido === q.id_qr ? 'Cerrar' : 'Cajas'}
                         </button>
@@ -424,6 +453,24 @@ function QrCajas() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {qrVer && (
+        <div className="modal-overlay" onClick={() => setQrVer(null)}>
+          <div className="modal qr-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Código {qrVer.codigo}</h3>
+            <p className="rep-dim">Escaneá este QR con cualquier celular para abrir la trazabilidad completa del lote.</p>
+            <div className="qr-figura" ref={qrFiguraRef}>
+              <QRCodeCanvas value={`${TRAZA_BASE}${qrVer.codigo}`} size={220} level="M" />
+            </div>
+            <div className="qr-url">{`${TRAZA_BASE}${qrVer.codigo}`}</div>
+            <div className="form-actions">
+              <button type="button" className="btn-cancel" onClick={() => setQrVer(null)}>Cerrar</button>
+              <button type="button" className="btn-loc" onClick={copiarEnlaceQR}>Copiar enlace</button>
+              <button type="button" className="btn-save" onClick={descargarQR}>⬇ Descargar PNG</button>
+            </div>
           </div>
         </div>
       )}

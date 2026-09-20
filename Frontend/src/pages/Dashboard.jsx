@@ -11,17 +11,6 @@ import {
 } from '../services/api';
 import { fechaLocal, hoyLocal } from '../utils/fecha';
 
-const ACCESO_RAPIDO = [
-  { to: '/fincas', titulo: 'Fincas', descripcion: 'Catastro, códigos ICA y responsables', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
-  { to: '/lotes', titulo: 'Lotes', descripcion: 'Lotificación, tipo de siembra y estado', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
-  { to: '/evaluaciones', titulo: 'Evaluaciones', descripcion: 'Sigatoka, Moko/Fusarium y Picudo', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
-  { to: '/aplicaciones', titulo: 'Aplicaciones', descripcion: 'Registro y control de carencia', roles: ['administrador', 'gerente', 'agronomo'] },
-  { to: '/agroquimicos', titulo: 'Agroquímicos', descripcion: 'Catálogo con códigos ICA', roles: ['administrador', 'gerente', 'agronomo'] },
-  { to: '/ordenes-corte', titulo: 'Órdenes de corte', descripcion: 'Planificación con bloqueo por carencia', roles: ['administrador', 'gerente', 'agronomo'] },
-  { to: '/qr', titulo: 'QR / Cajas', descripcion: 'Empaque y trazabilidad del producto', roles: ['administrador', 'gerente', 'agronomo', 'operador_empacadora'] },
-  { to: '/reportes', titulo: 'Reportes', descripcion: 'Producción, fitosanitario, trazabilidad e inventario', roles: ['administrador', 'gerente', 'agronomo'] }
-];
-
 function fechaCorta(f) {
   return (f || '').toString().slice(0, 10);
 }
@@ -317,17 +306,6 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="panel-card">
-        <h3 className="panel-title">Acceso rápido</h3>
-        <div className="quick-grid">
-          {ACCESO_RAPIDO.filter((mod) => mod.roles.includes(usuario.rol)).map((mod) => (
-            <button key={mod.to} className="quick-card" onClick={() => navigate(mod.to)}>
-              <strong>{mod.titulo}</strong>
-              <span>{mod.descripcion}</span>
-            </button>
-          ))}
-        </div>
-      </div>
     </AppLayout>
   );
 }
