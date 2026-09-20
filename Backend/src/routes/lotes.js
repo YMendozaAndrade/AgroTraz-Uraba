@@ -170,7 +170,7 @@ router.put('/:id', rolesGestion, async (req, res) => {
         tipo_siembra ?? existe[0].tipo_siembra,
         nuevaArea,
         nuevaDensidad,
-        poligono_geojson ?? existe[0].poligono_geojson,
+        poligono_geojson !== undefined ? poligono_geojson : existe[0].poligono_geojson,
         estado ?? existe[0].estado,
         id
       ]
