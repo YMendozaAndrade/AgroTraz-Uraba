@@ -37,6 +37,7 @@ const NAV_ITEMS = [
 function AppLayout({ children }) {
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   const itemsVisibles = NAV_ITEMS.filter((item) => item.roles.includes(usuario.rol));
 
@@ -47,7 +48,8 @@ function AppLayout({ children }) {
   }
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${menuAbierto ? 'menu-abierto' : ''}`}>
+      <div className="menu-overlay" onClick={() => setMenuAbierto(false)} />
       <aside className="app-sidebar">
         <div className="app-brand">
           <span>🍌</span>
@@ -58,6 +60,7 @@ function AppLayout({ children }) {
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={() => setMenuAbierto(false)}
               className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -74,6 +77,9 @@ function AppLayout({ children }) {
       </aside>
       <main className="app-main">
         <div className="app-topbar">
+          <button className="btn-menu" onClick={() => setMenuAbierto(!menuAbierto)} aria-label="Abrir menú">
+            ☰
+          </button>
           <div className="app-user">
             <div className="info">
               <div className="nombre">{usuario.nombre}</div>
