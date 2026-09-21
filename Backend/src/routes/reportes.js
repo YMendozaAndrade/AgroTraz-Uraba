@@ -22,7 +22,7 @@ const rolesGestion = requiereRol('administrador', 'gerente', 'agronomo');
 const rolesEliminar = requiereRol('administrador', 'gerente');
 
 // Listar historial de reportes generados
-router.get('/', async (req, res) => {
+router.get('/', requiereRol('administrador', 'gerente', 'agronomo'), async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT r.id_reporte, r.tipo_reporte, r.titulo, r.desde, r.hasta,
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
 });
 
 // Obtener un reporte con su detalle
-router.get('/:id', async (req, res) => {
+router.get('/:id', requiereRol('administrador', 'gerente', 'agronomo'), async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await pool.query(

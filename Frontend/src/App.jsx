@@ -17,6 +17,15 @@ import Perfil from './pages/Perfil';
 import Mapa from './pages/Mapa';
 import RutaProtegida from './app/RutaProtegida';
 
+// Roles por ruta (igual que el menú en AppLayout.jsx)
+const R = {
+  todos: ['administrador', 'gerente', 'agronomo', 'evaluador_campo', 'operador_empacadora'],
+  campo: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'],
+  tecnico: ['administrador', 'gerente', 'agronomo'],
+  empaque: ['administrador', 'gerente', 'agronomo', 'operador_empacadora'],
+  admin: ['administrador', 'gerente']
+};
+
 function App() {
   return (
     <Routes>
@@ -27,7 +36,7 @@ function App() {
       <Route
         path="/dashboard"
         element={
-          <RutaProtegida>
+          <RutaProtegida roles={R.todos}>
             <Dashboard />
           </RutaProtegida>
         }
@@ -35,7 +44,7 @@ function App() {
       <Route
         path="/fincas"
         element={
-          <RutaProtegida>
+          <RutaProtegida roles={R.campo}>
             <Fincas />
           </RutaProtegida>
         }
@@ -43,20 +52,20 @@ function App() {
       <Route
         path="/lotes"
         element={
-          <RutaProtegida>
+          <RutaProtegida roles={R.campo}>
             <Lotes />
           </RutaProtegida>
         }
       />
-      <Route path="/evaluaciones" element={<RutaProtegida><Evaluaciones /></RutaProtegida>} />
-      <Route path="/agroquimicos" element={<RutaProtegida><Agroquimicos /></RutaProtegida>} />
-      <Route path="/aplicaciones" element={<RutaProtegida><Aplicaciones /></RutaProtegida>} />
-      <Route path="/ordenes-corte" element={<RutaProtegida><OrdenesCorte /></RutaProtegida>} />
-      <Route path="/qr" element={<RutaProtegida><QrCajas /></RutaProtegida>} />
-      <Route path="/reportes" element={<RutaProtegida><Reportes /></RutaProtegida>} />
-      <Route path="/usuarios" element={<RutaProtegida><Usuarios /></RutaProtegida>} />
-      <Route path="/perfil" element={<RutaProtegida><Perfil /></RutaProtegida>} />
-      <Route path="/mapa" element={<RutaProtegida><Mapa /></RutaProtegida>} />
+      <Route path="/evaluaciones" element={<RutaProtegida roles={R.campo}><Evaluaciones /></RutaProtegida>} />
+      <Route path="/agroquimicos" element={<RutaProtegida roles={R.tecnico}><Agroquimicos /></RutaProtegida>} />
+      <Route path="/aplicaciones" element={<RutaProtegida roles={R.tecnico}><Aplicaciones /></RutaProtegida>} />
+      <Route path="/ordenes-corte" element={<RutaProtegida roles={R.tecnico}><OrdenesCorte /></RutaProtegida>} />
+      <Route path="/qr" element={<RutaProtegida roles={R.empaque}><QrCajas /></RutaProtegida>} />
+      <Route path="/reportes" element={<RutaProtegida roles={R.tecnico}><Reportes /></RutaProtegida>} />
+      <Route path="/usuarios" element={<RutaProtegida roles={R.admin}><Usuarios /></RutaProtegida>} />
+      <Route path="/perfil" element={<RutaProtegida roles={R.todos}><Perfil /></RutaProtegida>} />
+      <Route path="/mapa" element={<RutaProtegida roles={R.campo}><Mapa /></RutaProtegida>} />
     </Routes>
   );
 }

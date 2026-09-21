@@ -10,7 +10,7 @@ const rolesGestion = requiereRol('administrador', 'gerente', 'agronomo');
 
 const TIPOS = ['fungicida', 'insecticida', 'fertilizante', 'herbicida', 'otros'];
 
-router.get('/', async (req, res) => {
+router.get('/', requiereRol('administrador', 'gerente', 'agronomo'), async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT id_agroquimico, nombre, ingrediente_activo, registro_ica, tipo_producto,
