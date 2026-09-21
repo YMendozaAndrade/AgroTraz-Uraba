@@ -18,7 +18,6 @@ import { fechaLocal, hoyLocal } from '../utils/fecha';
 const SECCIONES = [
   { id: 'produccion', titulo: 'Producción' },
   { id: 'fitosanitario', titulo: 'Fitosanitario' },
-  { id: 'trazabilidad', titulo: 'Trazabilidad' },
   { id: 'inventario', titulo: 'Inventario campesino' },
   { id: 'ica', titulo: 'ICA · Aplicaciones' },
   { id: 'globalgap', titulo: 'GlobalG.A.P.' },
@@ -531,7 +530,7 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
   );
 }
 
-function ReporteTrazabilidad({ datos }) {
+function TrazaPorCodigo() {
   const [codigo, setCodigo] = useState('');
   const [traza, setTraza] = useState(null);
   const [buscando, setBuscando] = useState(false);
@@ -559,8 +558,8 @@ function ReporteTrazabilidad({ datos }) {
     <Fragment>
       <div className="page-head no-print">
         <div>
-          <h2>Trazabilidad por código QR</h2>
-          <p className="rep-sub">Consulte el origen completo de un empaque por su código QR.</p>
+          <h3 className="rep-seccion" style={{ margin: 0 }}>Consultar por código QR</h3>
+          <p className="rep-sub">Origen completo de un empaque por su código.</p>
         </div>
         <div className="page-head-acciones">
           <BotonGuardar
@@ -1086,6 +1085,7 @@ function ReporteGlobalGAP({ datos, filtros, setFiltros, fincas }) {
 
   const predio = filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || null) : null;
   const titulo = `GlobalG.A.P. · Trazabilidad Lote-a-Caja${filtros.desde ? ` (${fechaLegible(filtros.desde)} - ${fechaLegible(filtros.hasta)})` : ''}`;
+  const [modo, setModo] = useState('periodo');
 
   const tablasGG = [
     {
@@ -1097,6 +1097,24 @@ function ReporteGlobalGAP({ datos, filtros, setFiltros, fincas }) {
 
   return (
     <Fragment>
+      <nav className="rep-tabs no-print" style={{ marginBottom: 12 }}>
+        <button
+          className={`rep-tab ${modo === 'periodo' ? 'active' : ''}`}
+          onClick={() => setModo('periodo')}
+        >
+          Por período
+        </button>
+        <button
+          className={`rep-tab ${modo === 'codigo' ? 'active' : ''}`}
+          onClick={() => setModo('codigo')}
+        >
+          Por código QR
+        </button>
+      </nav>
+      {modo === 'codigo' ? (
+        <TrazaPorCodigo />
+      ) : (
+      <Fragment>
       <FiltrosReporte
         filtros={filtros}
         setFiltros={setFiltros}
@@ -1181,6 +1199,8 @@ function ReporteGlobalGAP({ datos, filtros, setFiltros, fincas }) {
           </div>
         )}
       </Reporte>
+      </Fragment>
+      )}
     </Fragment>
   );
 }
@@ -1642,7 +1662,6 @@ function Reportes() {
           fincas={datos?.fincas || []}
         />
       )}
-      {seccion === 'trazabilidad' && <ReporteTrazabilidad datos={datos || {}} />}
       {seccion === 'inventario' && <ReporteInventario datos={datos || {}} />}
       {seccion === 'ica' && (
         <ReporteICA
