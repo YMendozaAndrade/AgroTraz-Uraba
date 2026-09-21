@@ -1,0 +1,14 @@
+Cómo poner la foto de portada del login
+============================================
+1. Guarde aquí su foto de la plantación con el nombre exacto:
+
+     portada.jpg
+
+   Ruta completa: Frontend/public/img/portada.jpg
+
+2. Recomendado: JPG horizontal de al menos 1200 px de ancho.
+
+3. Avíseme y yo recompilo y subo el cambio.
+
+Mientras no exista el archivo, el login muestra un fondo
+verde institucional con la frase (sin foto).

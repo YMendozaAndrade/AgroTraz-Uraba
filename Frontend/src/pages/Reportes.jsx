@@ -159,8 +159,15 @@ function ReporteProduccion({ datos, filtros, setFiltros, fincas }) {
     return true;
   };
 
-  const qrs = (datos.qrs || []).filter((q) => enRango(q.fecha_proceso));
-  const ordenes = (datos.ordenes || []).filter((o) => enRango(o.fecha_orden));
+  const loteDe = Object.fromEntries((datos.lotes || []).map((l) => [l.id_lote, l]));
+  const qrs = (datos.qrs || [])
+    .filter((q) => enRango(q.fecha_proceso))
+    .filter((q) => !filtros.finca || String(q.id_finca) === filtros.finca)
+    .filter((q) => !filtros.lote || String(q.id_lote) === filtros.lote);
+  const ordenes = (datos.ordenes || [])
+    .filter((o) => enRango(o.fecha_orden))
+    .filter((o) => !filtros.finca || String((loteDe[o.id_lote] || {}).id_finca || '') === filtros.finca)
+    .filter((o) => !filtros.lote || String(o.id_lote) === filtros.lote);
   const kgTotal = qrs.reduce((a, q) => a + Number(q.peso_neto || 0), 0);
   const cajasTotal = qrs.reduce((a, q) => a + Number(q.total_cajas || 0), 0);
 
@@ -208,13 +215,16 @@ function ReporteProduccion({ datos, filtros, setFiltros, fincas }) {
         setFiltros={setFiltros}
         fincas={fincas}
         filtroFinca={filtros.finca}
-        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
+        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v, lote: '' })}
+        lotesVisibles={(datos.lotes || []).filter((l) => !filtros.finca || String(l.id_finca) === filtros.finca)}
+        filtroLote={filtros.lote || ''}
+        setFiltroLote={(v) => setFiltros({ ...filtros, lote: v })}
       />
       <div className="page-head no-print">
         <div>
           <h2>Reporte de producción</h2>
           <p className="rep-sub">
-            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || {}).nombre : 'Todas las fincas'}
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || {}).nombre : 'Todas las fincas'}{filtros.lote ? ` · ${((datos.lotes || []).find((l) => String(l.id_lote) === filtros.lote) || {}).nombre || ''}` : ''}
           </p>
         </div>
         <div className="page-head-acciones">
@@ -322,9 +332,15 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
     return true;
   };
 
-  const lotes = (datos.lotes || []).filter((l) => !filtros.finca || String(l.id_finca) === filtros.finca);
-  const evals = (datos.evaluaciones || []).filter((e) => enRango(e.fecha_evaluacion));
-  const apps = (datos.aplicaciones || []).filter((a) => enRango(a.fecha_aplicacion));
+  const lotes = (datos.lotes || [])
+    .filter((l) => !filtros.finca || String(l.id_finca) === filtros.finca)
+    .filter((l) => !filtros.lote || String(l.id_lote) === filtros.lote);
+  const evals = (datos.evaluaciones || [])
+    .filter((e) => enRango(e.fecha_evaluacion))
+    .filter((e) => !filtros.lote || String(e.id_lote) === filtros.lote);
+  const apps = (datos.aplicaciones || [])
+    .filter((a) => enRango(a.fecha_aplicacion))
+    .filter((a) => !filtros.lote || String(a.id_lote) === filtros.lote);
 
   const enCarencia = lotes.filter((l) => l.estado_efectivo === 'carencia').length;
   const enCuarentena = lotes.filter((l) => l.estado_efectivo === 'cuarentena').length;
@@ -381,13 +397,16 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
         setFiltros={setFiltros}
         fincas={fincas}
         filtroFinca={filtros.finca}
-        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
+        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v, lote: '' })}
+        lotesVisibles={(datos.lotes || []).filter((l) => !filtros.finca || String(l.id_finca) === filtros.finca)}
+        filtroLote={filtros.lote || ''}
+        setFiltroLote={(v) => setFiltros({ ...filtros, lote: v })}
       />
       <div className="page-head no-print">
         <div>
           <h2>Reporte fitosanitario</h2>
           <p className="rep-sub">
-            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || {}).nombre : 'Todas las fincas'}
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || {}).nombre : 'Todas las fincas'}{filtros.lote ? ` · ${((datos.lotes || []).find((l) => String(l.id_lote) === filtros.lote) || {}).nombre || ''}` : ''}
           </p>
         </div>
         <div className="page-head-acciones">
@@ -909,6 +928,7 @@ function ReporteICA({ datos, filtros, setFiltros, fincas }) {
   const apps = (datos.aplicaciones || [])
     .filter((a) => enRango(a.fecha_aplicacion))
     .filter((a) => {
+      if (filtros.lote && String(a.id_lote) !== filtros.lote) return false;
       if (!filtros.finca) return true;
       const lote = (datos.lotes || []).find((l) => l.id_lote === a.id_lote);
       return lote ? String(lote.id_finca) === filtros.finca : true;
@@ -951,13 +971,16 @@ function ReporteICA({ datos, filtros, setFiltros, fincas }) {
         setFiltros={setFiltros}
         fincas={fincas}
         filtroFinca={filtros.finca}
-        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
+        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v, lote: '' })}
+        lotesVisibles={(datos.lotes || []).filter((l) => !filtros.finca || String(l.id_finca) === filtros.finca)}
+        filtroLote={filtros.lote || ''}
+        setFiltroLote={(v) => setFiltros({ ...filtros, lote: v })}
       />
       <div className="page-head no-print">
         <div>
           <h2>ICA · Registro de aplicaciones</h2>
           <p className="rep-sub">
-            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {predio ? predio.nombre : 'Todos los predios'}
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {predio ? predio.nombre : 'Todos los predios'}{filtros.lote ? ` · ${((datos.lotes || []).find((l) => String(l.id_lote) === filtros.lote) || {}).nombre || ''}` : ''}
           </p>
         </div>
         <div className="page-head-acciones">
@@ -1036,6 +1059,7 @@ function ReporteGlobalGAP({ datos, filtros, setFiltros, fincas }) {
   const qrs = (datos.qrs || [])
     .filter((q) => enRango(q.fecha_proceso))
     .filter((q) => {
+      if (filtros.lote && String(q.id_lote) !== filtros.lote) return false;
       if (!filtros.finca) return true;
       const lote = (datos.lotes || []).find((l) => l.id_lote === q.id_lote);
       return lote ? String(lote.id_finca) === filtros.finca : true;
@@ -1104,13 +1128,16 @@ function ReporteGlobalGAP({ datos, filtros, setFiltros, fincas }) {
         setFiltros={setFiltros}
         fincas={fincas}
         filtroFinca={filtros.finca}
-        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
+        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v, lote: '' })}
+        lotesVisibles={(datos.lotes || []).filter((l) => !filtros.finca || String(l.id_finca) === filtros.finca)}
+        filtroLote={filtros.lote || ''}
+        setFiltroLote={(v) => setFiltros({ ...filtros, lote: v })}
       />
       <div className="page-head no-print">
         <div>
           <h2>GlobalG.A.P. · Trazabilidad</h2>
           <p className="rep-sub">
-            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {predio ? predio.nombre : 'Todos los predios'}
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {predio ? predio.nombre : 'Todos los predios'}{filtros.lote ? ` · ${((datos.lotes || []).find((l) => String(l.id_lote) === filtros.lote) || {}).nombre || ''}` : ''}
           </p>
         </div>
         <div className="page-head-acciones">
@@ -1189,7 +1216,7 @@ function ReporteGlobalGAP({ datos, filtros, setFiltros, fincas }) {
   );
 }
 
-function FiltrosReporte({ filtros, setFiltros, fincas, filtroFinca, setFiltroFinca }) {
+function FiltrosReporte({ filtros, setFiltros, fincas, filtroFinca, setFiltroFinca, lotesVisibles = [], filtroLote = '', setFiltroLote = null }) {
   return (
     <div className="dash-filtros no-print">
       <div className="dash-filtro-item">
@@ -1209,6 +1236,17 @@ function FiltrosReporte({ filtros, setFiltros, fincas, filtroFinca, setFiltroFin
           ))}
         </select>
       </div>
+      {setFiltroLote && (
+        <div className="dash-filtro-item">
+          <label htmlFor="f-lote">Lote</label>
+          <select id="f-lote" value={filtroLote} onChange={(e) => setFiltroLote(e.target.value)}>
+            <option value="">Todos</option>
+            {lotesVisibles.map((l) => (
+              <option key={l.id_lote} value={String(l.id_lote)}>{l.finca ? `${l.finca} / ` : ''}{l.nombre}</option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="dash-filtro-item dash-filtro-acciones">
         <button className="btn-cancel" onClick={() => setFiltros({ desde: haceDias(30), hasta: hoyISO() })}>Últimos 30 días</button>
         <button className="btn-cancel" onClick={() => setFiltros({ desde: '', hasta: hoyISO() })}>Todo</button>
@@ -1582,10 +1620,10 @@ function Reportes() {
   const seccionInicial = SECCIONES.some((s) => s.id === seccionParam) ? seccionParam : 'produccion';
   const [seccion, setSeccion] = useState(seccionInicial);
   const [datos, setDatos] = useState(null);
-  const [filtroProd, setFiltroProd] = useState({ desde: haceDias(30), hasta: hoyISO(), finca: '' });
-  const [filtroFito, setFiltroFito] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
-  const [filtroICA, setFiltroICA] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
-  const [filtroGG, setFiltroGG] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
+  const [filtroProd, setFiltroProd] = useState({ desde: haceDias(30), hasta: hoyISO(), finca: '', lote: '' });
+  const [filtroFito, setFiltroFito] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '', lote: '' });
+  const [filtroICA, setFiltroICA] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '', lote: '' });
+  const [filtroGG, setFiltroGG] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '', lote: '' });
 
   function cambiarSeccion(id) {
     setSeccion(id);

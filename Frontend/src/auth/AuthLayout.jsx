@@ -5,7 +5,11 @@ function AuthLayout({ children }) {
     <div className="auth-screen">
       <div className="auth-panel">
         <div className="auth-photo">
-          <img src="campo-login.jpg" alt="Campo bananero" />
+          <img
+            src="/img/portada.jpg"
+            alt="Plantación de banano"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
           <div className="auth-veil"></div>
           <div className="auth-quote">
             <p>“El campo no espera:<br />los registros tampoco.”</p>
