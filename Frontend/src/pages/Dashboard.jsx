@@ -214,7 +214,6 @@ function Dashboard() {
   const lotesEnCarencia = lotesVisibles.filter((l) => l.estado_efectivo === 'carencia').length;
   const lotesCuarentena = lotesVisibles.filter((l) => l.estado_efectivo === 'cuarentena').length;
   const lotesRestringidos = lotesVisibles.filter((l) => l.estado_efectivo === 'restringido').length;
-  const ordenesProgramadas = ordenesRango.filter((o) => o.estado === 'programada').length;
   const kgEmpacados = qrsRango.reduce((acc, q) => acc + Number(q.peso_neto || 0), 0);
 
   const kpis = [

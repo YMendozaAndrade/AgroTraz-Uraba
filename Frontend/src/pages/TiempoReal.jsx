@@ -32,7 +32,6 @@ function TiempoReal() {
   const [error, setError] = useState('');
   const [listo, setListo] = useState(false);
 
-  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
   const token = localStorage.getItem('token');
 
   async function cargarEventos() {

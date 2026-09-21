@@ -182,12 +182,4 @@ routerTR.get(
   }
 );
 
-routerTR.get(
-  '/posiciones',
-  requiereRol('administrador', 'gerente', 'agronomo'),
-  async (req, res) => {
-    res.json({ status: 'ok', posiciones: snapshotPosiciones() });
-  }
-);
-
 module.exports = { initTiempoReal, routerTR };

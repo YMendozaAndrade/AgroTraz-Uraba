@@ -1324,18 +1324,6 @@
   color: #fff;
 }
 
-.rep-cabecera {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.rep-cabecera h2 {
-  font-size: 20px;
-  color: #1d3b2a;
-}
-
 .rep-sub {
   color: #7d9083;
   font-size: 13px;
@@ -1551,7 +1539,6 @@
   .app-sidebar,
   .app-topbar,
   .rep-tabs,
-  .rep-cabecera,
   .page-head,
   .dash-filtros,
   .no-print {

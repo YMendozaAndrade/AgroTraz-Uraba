@@ -100,7 +100,6 @@ export const qrCajasApi = {
   traza: (codigo) => request(`/qr/traza/${codigo}`),
   listarCajas: (idQr) => request(`/qr/${idQr}/cajas`),
   crearCaja: (idQr, caja) => request(`/qr/${idQr}/cajas`, 'POST', caja),
-  actualizarCaja: (idCaja, caja) => request(`/qr/cajas/${idCaja}`, 'PUT', caja),
   eliminarCaja: (idCaja) => request(`/qr/cajas/${idCaja}`, 'DELETE')
 };
 
@@ -112,6 +111,5 @@ export const reportesApi = {
 };
 
 export const tiempoRealApi = {
-  eventos: () => request('/tiempo-real/eventos'),
-  posiciones: () => request('/tiempo-real/posiciones')
+  eventos: () => request('/tiempo-real/eventos')
 };

@@ -66,20 +66,6 @@ function haceDias(n) {
   return fechaLocal(d);
 }
 
-function Cabecera({ titulo, usuario, global }) {
-  return (
-    <div className="rep-cabecera no-print">
-      <div>
-        <h2>{titulo}</h2>
-        <p className="rep-sub">{global ? 'Reporte con datos de todo el sistema' : 'Reporte segmentado'}</p>
-      </div>
-      <button className="btn-primary" onClick={() => window.print()}>
-        Imprimir / Guardar PDF
-      </button>
-    </div>
-  );
-}
-
 function BotonGuardar({ tipo, titulo, desde, hasta, idFinca, resumen, tablas }) {
   const [estado, setEstado] = useState('idle');
   const [mensaje, setMensaje] = useState('');
@@ -351,8 +337,6 @@ function ReporteFitosanitario({ datos, filtros, setFiltros, fincas }) {
     if (e.tipo_evaluacion === 'moko_fusarium' && e.indice_severidad != null) riesgos[e.lote].moko = e.indice_severidad;
     if (e.tipo_evaluacion === 'picudo' && e.numero_adultos != null) riesgos[e.lote].picudo = e.numero_adultos;
   });
-
-  const TIPO_LABEL = { sigatoka: 'Sigatoka', moko_fusarium: 'Moko/Fusarium', picudo: 'Picudo' };
 
   const tablasFito = [
     {
@@ -1442,6 +1426,16 @@ function HistorialReportes({ fincas = [] }) {
     }
   }
 
+  async function abrirVer(id) {
+    setError('');
+    try {
+      const res = await reportesApi.obtener(id);
+      setVer(res.reporte);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
   return (
     <Fragment>
       <div className="page-head">
@@ -1569,7 +1563,7 @@ function HistorialReportes({ fincas = [] }) {
                   <td>{r.generado_por_nombre || '—'}</td>
                   <td className="r">{fechaLegible(r.created_at)}</td>
                   <td className="c no-print">
-                    <button className="btn-cancel" onClick={() => setVer(r)}>Ver</button>{' '}
+                    <button className="btn-cancel" onClick={() => abrirVer(r.id_reporte)}>Ver</button>{' '}
                     <button className="btn-danger" onClick={() => eliminar(r.id_reporte)}>Eliminar</button>
                   </td>
                 </tr>
