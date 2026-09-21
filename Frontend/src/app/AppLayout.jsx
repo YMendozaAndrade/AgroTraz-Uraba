@@ -13,7 +13,8 @@ const ICONOS = {
   '/reportes': 'M4 5h16v14H4zM4 9h16M9 13h6M9 17h4M8 13h.01M12 17h.01',
   '/usuarios': 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 8v6M20 11h-6',
   '/perfil': 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
-  '/mapa': 'M12 2a8 8 0 0 1 8 8c0 5.4-8 12-8 12S4 15.4 4 10a8 8 0 0 1 8-8zM12 10m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0'
+  '/mapa': 'M12 2a8 8 0 0 1 8 8c0 5.4-8 12-8 12S4 15.4 4 10a8 8 0 0 1 8-8zM12 10m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0',
+  '/tiempo-real': 'M12 12m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1'
 };
 
 const NAV_ITEMS = [
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { to: '/usuarios', label: 'Usuarios', roles: ['administrador', 'gerente'] },
   { to: '/reportes', label: 'Reportes', roles: ['administrador', 'gerente', 'agronomo'] },
   { to: '/mapa', label: 'Mapa', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo'] },
+  { to: '/tiempo-real', label: 'En vivo', roles: ['administrador', 'gerente', 'agronomo'] },
   { to: '/perfil', label: 'Mi perfil', roles: ['administrador', 'gerente', 'agronomo', 'evaluador_campo', 'operador_empacadora'] }
 ];
 

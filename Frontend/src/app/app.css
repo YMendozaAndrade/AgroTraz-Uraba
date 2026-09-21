@@ -270,6 +270,17 @@
   background: #8a8f8a;
 }
 
+.mapa-pin.vivo {
+  background: #2b6cb0;
+  animation: mapa-pulso 1.6s ease-out infinite;
+}
+
+@keyframes mapa-pulso {
+  0% { box-shadow: 0 0 0 0 rgba(43, 108, 176, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(43, 108, 176, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(43, 108, 176, 0); }
+}
+
 .mapa-ficha h4 {
   margin: 0 0 8px;
   color: #1d3b2a;

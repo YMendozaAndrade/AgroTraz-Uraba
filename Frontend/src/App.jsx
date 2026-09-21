@@ -15,6 +15,7 @@ import Reportes from './pages/Reportes';
 import Usuarios from './pages/Usuarios';
 import Perfil from './pages/Perfil';
 import Mapa from './pages/Mapa';
+import TiempoReal from './pages/TiempoReal';
 import RutaProtegida from './app/RutaProtegida';
 
 // Roles por ruta (igual que el menú en AppLayout.jsx)
@@ -66,6 +67,7 @@ function App() {
       <Route path="/usuarios" element={<RutaProtegida roles={R.admin}><Usuarios /></RutaProtegida>} />
       <Route path="/perfil" element={<RutaProtegida roles={R.todos}><Perfil /></RutaProtegida>} />
       <Route path="/mapa" element={<RutaProtegida roles={R.campo}><Mapa /></RutaProtegida>} />
+      <Route path="/tiempo-real" element={<RutaProtegida roles={R.tecnico}><TiempoReal /></RutaProtegida>} />
     </Routes>
   );
 }

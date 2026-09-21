@@ -13,6 +13,7 @@ const evaluacionesRoutes = require('./src/routes/evaluaciones');
 const qrCajasRoutes = require('./src/routes/qrCajas');
 const reportesRoutes = require('./src/routes/reportes');
 const trazaPublicaRoutes = require('./src/routes/trazaPublica');
+const { verificarToken } = require('./src/middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +36,10 @@ app.use('/api/reportes', reportesRoutes);
 // Trazabilidad pública (sin login): la abre cualquier celular al escanear el QR.
 // Debe ir antes del fallback SPA para que no la intercepte el index.html.
 app.use('/traza', trazaPublicaRoutes);
+
+// Tiempo real (posiciones en vivo + eventos de geocerca)
+const { initTiempoReal, routerTR } = require('./src/tiempoReal');
+app.use('/api/tiempo-real', verificarToken, routerTR);
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -59,7 +64,14 @@ if (fs.existsSync(distDir)) {
   });
 }
 
-app.listen(PORT, () => {
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
+initTiempoReal(io);
+
+server.listen(PORT, () => {
   console.log(`Servidor AgroTraz Uraba corriendo en http://localhost:${PORT}`);
   console.log(`MariaDB/MySQL en ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
 });

@@ -110,3 +110,8 @@ export const reportesApi = {
   obtener: (id) => request(`/reportes/${id}`),
   eliminar: (id) => request(`/reportes/${id}`, 'DELETE')
 };
+
+export const tiempoRealApi = {
+  eventos: () => request('/tiempo-real/eventos'),
+  posiciones: () => request('/tiempo-real/posiciones')
+};
