@@ -544,6 +544,89 @@
   .dash-2col { grid-template-columns: 1fr; }
 }
 
+/* ---------- Gráficas del dashboard ---------- */
+.dash-3col {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dash-area {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 6px;
+}
+
+.dash-area-eje {
+  font-size: 10px;
+  fill: #8a9a8e;
+}
+
+.dash-donut-layout {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-height: 118px;
+}
+
+.dash-donut {
+  width: 118px;
+  height: 118px;
+  flex: none;
+}
+
+.dash-donut-total {
+  font-size: 21px;
+  font-weight: 800;
+  fill: #1d3b2a;
+}
+
+.dash-donut-label {
+  font-size: 9.5px;
+  fill: #8a9a8e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dash-donut-leyenda {
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-donut-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #3c4640;
+}
+
+.dash-leyenda-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dash-leyenda-valor {
+  margin-left: auto;
+  font-weight: 700;
+  color: #1d3b2a;
+}
+
+@media (max-width: 1000px) {
+  .dash-3col { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 680px) {
+  .dash-3col { grid-template-columns: 1fr; }
+}
+
 /* ---------- Traza / cajas ---------- */
 .traza-grid {
   display: grid;

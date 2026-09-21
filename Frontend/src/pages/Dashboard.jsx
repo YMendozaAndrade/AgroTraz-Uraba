@@ -25,6 +25,145 @@ function haceDias(n) {
   return fechaLocal(d);
 }
 
+function inicioSemana(t) {
+  const d = t instanceof Date ? new Date(t) : new Date(t + 'T00:00:00');
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+function periodosEntre(desde, hasta) {
+  const d0 = new Date(desde + 'T00:00:00');
+  const d1 = new Date(hasta + 'T00:00:00');
+  if (isNaN(d0) || isNaN(d1)) return { periodos: [], modo: 'dia', keyDe: () => '' };
+  const dias = Math.round((d1 - d0) / 86400000);
+  const modo = dias <= 35 ? 'dia' : dias <= 130 ? 'semana' : 'mes';
+  const periodos = [];
+  const cursor = new Date(d0);
+  while (cursor <= d1) {
+    periodos.push({
+      inicio: new Date(cursor),
+      key:
+        modo === 'dia' ? fechaLocal(cursor) :
+        modo === 'semana' ? fechaLocal(inicioSemana(cursor)) :
+        `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`
+    });
+    if (modo === 'dia') cursor.setDate(cursor.getDate() + 1);
+    else if (modo === 'semana') cursor.setDate(cursor.getDate() + 7);
+    else cursor.setMonth(cursor.getMonth() + 1);
+  }
+  function keyDe(fechaISO) {
+    const t = new Date((fechaISO || '').slice(0, 10) + 'T00:00:00');
+    if (isNaN(t)) return '';
+    if (modo === 'dia') return fechaLocal(t);
+    if (modo === 'semana') return fechaLocal(inicioSemana(t));
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
+  }
+  return { periodos, modo, keyDe };
+}
+
+function etiquetaPeriodo(p, modo) {
+  if (modo === 'mes') {
+    return p.inicio.toLocaleDateString('es-CO', { month: 'short', year: '2-digit' });
+  }
+  return p.inicio.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' });
+}
+
+function AreaChart({ serie, color = '#3f7d3a' }) {
+  const ancho = 620;
+  const alto = 200;
+  const pad = { t: 14, r: 12, b: 30, l: 48 };
+  if (!serie || serie.length === 0) return null;
+  const max = Math.max(1, ...serie.map((p) => p.valor));
+  const pts = serie.map((p, i) => ({
+    x: pad.l + (i / Math.max(1, serie.length - 1)) * (ancho - pad.l - pad.r),
+    y: pad.t + (1 - p.valor / max) * (alto - pad.t - pad.b),
+    ...p
+  }));
+  const linea = pts.map((pp, i) => `${i === 0 ? 'M' : 'L'} ${pp.x.toFixed(1)} ${pp.y.toFixed(1)}`).join(' ');
+  const area = `${linea} L ${pts[pts.length - 1].x.toFixed(1)} ${alto - pad.b} L ${pts[0].x.toFixed(1)} ${alto - pad.b} Z`;
+  const grid = [0, 0.25, 0.5, 0.75, 1].map((f) => {
+    const y = pad.t + f * (alto - pad.t - pad.b);
+    return { y, val: Math.round(max * (1 - f)) };
+  });
+  const pasoEtiquetas = Math.max(1, Math.ceil(serie.length / 6));
+  return (
+    <svg viewBox={`0 0 ${ancho} ${alto}`} className="dash-area" role="img" aria-label="Evolución de producción en kg">
+      <defs>
+        <linearGradient id="dashGradProd" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      {grid.map((g, i) => (
+        <g key={i}>
+          <line x1={pad.l} x2={ancho - pad.r} y1={g.y} y2={g.y} stroke="#edf0ea" strokeDasharray="3 4" />
+          <text x={pad.l - 8} y={g.y + 4} textAnchor="end" className="dash-area-eje">{g.val.toLocaleString('es-CO')}</text>
+        </g>
+      ))}
+      <path d={area} fill="url(#dashGradProd)" />
+      <path d={linea} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.filter((_, i) => i % pasoEtiquetas === 0).map((pp) => (
+        <text key={pp.x} x={pp.x} y={alto - 8} textAnchor="middle" className="dash-area-eje">{pp.etiqueta}</text>
+      ))}
+    </svg>
+  );
+}
+
+function Donut({ datos, centroValor, centroLabel }) {
+  const crc = 2 * Math.PI * 54;
+  const total = datos.reduce((a, d) => a + Number(d.valor || 0), 0);
+  let acum = 0;
+  return (
+    <div className="dash-donut-layout">
+      <svg viewBox="0 0 140 140" className="dash-donut" role="img" aria-label={centroLabel}>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#f0f1ec" strokeWidth="18" />
+        {total > 0 &&
+          datos.map((d, i) => {
+            const fraccion = Number(d.valor) / total;
+            const dash = fraccion * crc;
+            const offset = -acum * crc;
+            acum += fraccion;
+            return (
+              <circle
+                key={i}
+                cx="70"
+                cy="70"
+                r="54"
+                fill="none"
+                stroke={d.color}
+                strokeWidth="18"
+                strokeDasharray={`${dash} ${crc - dash}`}
+                strokeDashoffset={offset}
+                transform="rotate(-90 70 70)"
+              >
+                <title>{`${d.label}: ${d.valor}`}</title>
+              </circle>
+            );
+          })}
+        <text x="70" y="67" textAnchor="middle" className="dash-donut-total">{centroValor}</text>
+        <text x="70" y="84" textAnchor="middle" className="dash-donut-label">{centroLabel}</text>
+      </svg>
+      <ul className="dash-donut-leyenda">
+        {datos.map((d, i) => (
+          <li key={i}>
+            <span className="dash-leyenda-punto" style={{ background: d.color }}></span>
+            {d.label}
+            <span className="dash-leyenda-valor">{d.valor}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const MAPA_ESTADO = {
+  disponible: { label: 'Disponible', color: '#3f7d3a' },
+  carencia: { label: 'En carencia', color: '#d99e29' },
+  cuarentena: { label: 'Cuarentena', color: '#b3352b' },
+  restringido: { label: 'Restringido', color: '#8b6f47' },
+  inactivo: { label: 'Inactivo', color: '#b0ada5' }
+};
+
 function Dashboard() {
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
@@ -164,6 +303,36 @@ function Dashboard() {
     return tonos[idx % tonos.length];
   };
 
+  const desdeUsar = rango.desde || haceDias(365);
+  const { periodos, modo, keyDe } = periodosEntre(desdeUsar, rango.hasta);
+  const serieProduccion = periodos.map((p) => ({ etiqueta: etiquetaPeriodo(p, modo), valor: 0 }));
+  const idxPorKey = new Map(periodos.map((p, i) => [p.key, i]));
+  qrsRango.forEach((q) => {
+    const k = keyDe(q.fecha_proceso);
+    const i = idxPorKey.get(k);
+    if (i != null) serieProduccion[i].valor += Number(q.peso_neto || 0);
+  });
+
+  const estadoConteo = {};
+  lotesVisibles.forEach((l) => {
+    const k = l.activo === false ? 'inactivo' : (l.estado_efectivo || 'disponible');
+    estadoConteo[k] = (estadoConteo[k] || 0) + 1;
+  });
+  const conteoEstados = Object.entries(MAPA_ESTADO)
+    .filter(([k]) => estadoConteo[k])
+    .map(([k, meta]) => ({ label: meta.label, color: meta.color, valor: estadoConteo[k] }));
+
+  const cultivoConteo = { banano: 0, platano: 0 };
+  lotesVisibles.forEach((l) => {
+    const t = l.tipo_siembra === 'platano' ? 'platano' : 'banano';
+    cultivoConteo[t] += Number(l.area_hectareas || 0);
+  });
+  const haTotal = cultivoConteo.banano + cultivoConteo.platano;
+  const conteoCultivo = [
+    { label: 'Banano', color: '#d99e29', valor: Math.round(cultivoConteo.banano * 100) / 100 },
+    { label: 'Plátano', color: '#2f6489', valor: Math.round(cultivoConteo.platano * 100) / 100 }
+  ].filter((c) => c.valor > 0);
+
   return (
     <AppLayout>
       <div className="inicio-hero">
@@ -263,6 +432,33 @@ function Dashboard() {
                 </li>
               ))}
             </ul>
+          )}
+        </div>
+      </div>
+
+      <div className="dash-3col">
+        <div className="panel-card dash-chart-card">
+          <h3 className="panel-title">Evolución de producción empacada (kg)</h3>
+          {serieProduccion.every((p) => !p.valor) ? (
+            <p className="dash-vacio">Sin empaque registrado en el período.</p>
+          ) : (
+            <AreaChart serie={serieProduccion} />
+          )}
+        </div>
+        <div className="panel-card">
+          <h3 className="panel-title">Lotes por estado</h3>
+          {conteoEstados.length === 0 ? (
+            <p className="dash-vacio">Sin lotes para mostrar.</p>
+          ) : (
+            <Donut datos={conteoEstados} centroValor={lotesVisibles.length} centroLabel="lotes" />
+          )}
+        </div>
+        <div className="panel-card">
+          <h3 className="panel-title">Tipo de cultivo (ha)</h3>
+          {conteoCultivo.length === 0 ? (
+            <p className="dash-vacio">Sin áreas registradas.</p>
+          ) : (
+            <Donut datos={conteoCultivo} centroValor={haTotal} centroLabel="ha" />
           )}
         </div>
       </div>
