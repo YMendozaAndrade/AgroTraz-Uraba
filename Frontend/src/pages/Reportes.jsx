@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import AppLayout from '../app/AppLayout';
 import {
   fincasApi,
@@ -21,6 +22,7 @@ const SECCIONES = [
   { id: 'inventario', titulo: 'Inventario campesino' },
   { id: 'ica', titulo: 'ICA · Aplicaciones' },
   { id: 'globalgap', titulo: 'GlobalG.A.P.' },
+  { id: 'actividad', titulo: 'Actividad' },
   { id: 'historial', titulo: 'Historial' }
 ];
 
@@ -1211,11 +1213,177 @@ function FiltrosReporte({ filtros, setFiltros, fincas, filtroFinca, setFiltroFin
   );
 }
 
-function HistorialReportes() {
+const TIPO_ACTIVIDAD_LABEL = {
+  orden: 'Orden de corte',
+  aplicacion: 'Aplicación',
+  evaluacion: 'Evaluación',
+  qr: 'QR / Empaque',
+  reporte: 'Reporte'
+};
+
+const TIPO_ACTIVIDAD_BADGE = {
+  orden: 'badge-programada',
+  aplicacion: 'badge-carencia',
+  evaluacion: 'badge-platano',
+  qr: 'badge-disponible',
+  reporte: 'badge-activo'
+};
+
+function ActividadReciente({ datos, fincas }) {
+  const [desde, setDesde] = useState(haceDias(30));
+  const [hasta, setHasta] = useState(hoyISO());
+  const [finca, setFinca] = useState('');
+  const [tipo, setTipo] = useState('');
+
+  const enRango = (f) => {
+    const fc = fechaCorta(f);
+    if (!fc) return false;
+    if (desde && fc < desde) return false;
+    if (hasta && fc > hasta) return false;
+    return true;
+  };
+
+  const matchFinca = (nombre) => {
+    if (!finca) return true;
+    const nombreFiltro = (fincas.find((f) => String(f.id_finca) === finca) || {}).nombre || '';
+    return (nombre || '') === nombreFiltro;
+  };
+
+  const items = [
+    ...(datos.ordenes || []).filter((o) => enRango(o.fecha_orden) && matchFinca(o.finca)).map((o) => ({
+      fecha: fechaCorta(o.fecha_orden),
+      tipo: 'orden',
+      texto: `Orden de corte #${o.id_orden_corte} · ${o.lote}`,
+      detalle: o.estado,
+      finca: o.finca || '—'
+    })),
+    ...(datos.aplicaciones || []).filter((a) => enRango(a.fecha_aplicacion) && matchFinca(a.finca)).map((a) => ({
+      fecha: fechaCorta(a.fecha_aplicacion),
+      tipo: 'aplicacion',
+      texto: `Aplicación · ${a.agroquimico || ''} · ${a.lote}`,
+      detalle: `Carencia hasta ${fechaLegible(a.fecha_fin_carencia)}`,
+      finca: a.finca || '—'
+    })),
+    ...(datos.evaluaciones || []).filter((e) => enRango(e.fecha_evaluacion) && matchFinca(e.finca)).map((e) => ({
+      fecha: fechaCorta(e.fecha_evaluacion),
+      tipo: 'evaluacion',
+      texto: `Evaluación ${e.tipo_evaluacion || ''} · ${e.lote}`,
+      detalle: e.yha != null ? `YHA ${e.yha}` : (e.evaluador || '—'),
+      finca: e.finca || '—'
+    })),
+    ...(datos.qrs || []).filter((q) => enRango(q.fecha_proceso) && matchFinca(q.finca)).map((q) => ({
+      fecha: fechaCorta(q.fecha_proceso),
+      tipo: 'qr',
+      texto: `QR ${q.codigo} · ${q.lote}`,
+      detalle: `${q.peso_neto || 0} kg`,
+      finca: q.finca || '—'
+    })),
+    ...(datos.reportes || []).filter((rp) => enRango(rp.created_at) && matchFinca(rp.finca)).map((rp) => ({
+      fecha: fechaCorta(rp.created_at),
+      tipo: 'reporte',
+      texto: `Reporte ${TIPO_REPORTE_LABEL[rp.tipo_reporte] || rp.tipo_reporte}`,
+      detalle: rp.titulo,
+      finca: rp.finca || '—'
+    }))
+  ]
+    .filter((i) => !tipo || i.tipo === tipo)
+    .sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+
+  return (
+    <Fragment>
+      <div className="page-head no-print">
+        <div>
+          <h2>Actividad reciente</h2>
+          <p className="rep-sub">Todo lo registrado en el sistema: cortes, aplicaciones, evaluaciones, empaques y reportes guardados.</p>
+        </div>
+      </div>
+
+      <div className="dash-filtros no-print">
+        <div className="dash-filtro-item">
+          <label htmlFor="a-desde">Desde</label>
+          <input id="a-desde" type="date" className="rep-input" value={desde} onChange={(e) => setDesde(e.target.value)} />
+        </div>
+        <div className="dash-filtro-item">
+          <label htmlFor="a-hasta">Hasta</label>
+          <input id="a-hasta" type="date" className="rep-input" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+        </div>
+        <div className="dash-filtro-item">
+          <label htmlFor="a-tipo">Tipo de actividad</label>
+          <select id="a-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="">Todas</option>
+            {Object.entries(TIPO_ACTIVIDAD_LABEL).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+        </div>
+        <div className="dash-filtro-item">
+          <label htmlFor="a-finca">Finca</label>
+          <select id="a-finca" value={finca} onChange={(e) => setFinca(e.target.value)}>
+            <option value="">Todas</option>
+            {fincas.map((f) => (
+              <option key={f.id_finca} value={String(f.id_finca)}>{f.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <div className="dash-filtro-item dash-filtro-acciones">
+          <button
+            className="btn-cancel"
+            onClick={() => {
+              setDesde(haceDias(30));
+              setHasta(hoyISO());
+              setTipo('');
+              setFinca('');
+            }}
+          >
+            Últimos 30 días
+          </button>
+        </div>
+      </div>
+
+      <div className="panel-card">
+        {items.length === 0 ? (
+          <p className="dash-vacio">Sin actividad en el período seleccionado.</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="rep-tabla">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Actividad</th>
+                  <th>Detalle</th>
+                  <th>Finca</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((i, idx) => (
+                  <tr key={idx}>
+                    <td className="r">{fechaLegible(i.fecha)}</td>
+                    <td>
+                      <span className={`badge ${TIPO_ACTIVIDAD_BADGE[i.tipo]}`}>{TIPO_ACTIVIDAD_LABEL[i.tipo]}</span>{' '}
+                      {i.texto}
+                    </td>
+                    <td>{i.detalle}</td>
+                    <td>{i.finca}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </Fragment>
+  );
+}
+
+function HistorialReportes({ fincas = [] }) {
   const [reportes, setReportes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [ver, setVer] = useState(null);
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroDesde, setFiltroDesde] = useState('');
+  const [filtroHasta, setFiltroHasta] = useState('');
+  const [filtroFinca, setFiltroFinca] = useState('');
 
   async function cargar() {
     setCargando(true);
@@ -1233,6 +1401,15 @@ function HistorialReportes() {
   useEffect(() => {
     cargar();
   }, []);
+
+  const filtrados = reportes.filter((r) => {
+    if (filtroTipo && r.tipo_reporte !== filtroTipo) return false;
+    if (filtroFinca && (r.finca || '') !== ((fincas.find((f) => String(f.id_finca) === filtroFinca) || {}).nombre || '')) return false;
+    const fc = fechaCorta(r.created_at);
+    if (filtroDesde && fc < filtroDesde) return false;
+    if (filtroHasta && fc > filtroHasta) return false;
+    return true;
+  });
 
   async function eliminar(id) {
     if (!window.confirm('¿Eliminar este reporte del historial?')) return;
@@ -1261,6 +1438,52 @@ function HistorialReportes() {
         )}
       </div>
       {error && <div className="alert alert-error no-print">{error}</div>}
+
+      {!ver && (
+        <div className="dash-filtros no-print">
+          <div className="dash-filtro-item">
+            <label htmlFor="h-tipo">Tipo de reporte</label>
+            <select id="h-tipo" value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+              <option value="">Todos</option>
+              {Object.entries(TIPO_REPORTE_LABEL).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </div>
+          <div className="dash-filtro-item">
+            <label htmlFor="h-finca">Finca</label>
+            <select id="h-finca" value={filtroFinca} onChange={(e) => setFiltroFinca(e.target.value)}>
+              <option value="">Todas</option>
+              {fincas.map((f) => (
+                <option key={f.id_finca} value={String(f.id_finca)}>{f.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <div className="dash-filtro-item">
+            <label htmlFor="h-desde">Desde</label>
+            <input id="h-desde" type="date" className="rep-input" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
+          </div>
+          <div className="dash-filtro-item">
+            <label htmlFor="h-hasta">Hasta</label>
+            <input id="h-hasta" type="date" className="rep-input" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
+          </div>
+          {(filtroTipo || filtroDesde || filtroHasta || filtroFinca) && (
+            <div className="dash-filtro-item dash-filtro-acciones">
+              <button
+                className="btn-cancel"
+                onClick={() => {
+                  setFiltroTipo('');
+                  setFiltroDesde('');
+                  setFiltroHasta('');
+                  setFiltroFinca('');
+                }}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {ver ? (
         <div>
@@ -1300,6 +1523,8 @@ function HistorialReportes() {
         <div className="rep-vacio">
           No hay reportes guardados. Use "Guardar en historial" desde cada reporte.
         </div>
+      ) : filtrados.length === 0 ? (
+        <div className="rep-vacio">Ningún reporte coincide con los filtros seleccionados.</div>
       ) : (
         <div className="table-responsive">
           <table className="rep-tabla">
@@ -1315,7 +1540,7 @@ function HistorialReportes() {
               </tr>
             </thead>
             <tbody>
-              {reportes.map((r) => (
+              {filtrados.map((r) => (
                 <tr key={r.id_reporte}>
                   <td>{TIPO_REPORTE_LABEL[r.tipo_reporte] || r.tipo_reporte}</td>
                   <td>{r.titulo}</td>
@@ -1338,12 +1563,26 @@ function HistorialReportes() {
 }
 
 function Reportes() {
-  const [seccion, setSeccion] = useState('produccion');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const seccionParam = searchParams.get('seccion');
+  const seccionInicial = SECCIONES.some((s) => s.id === seccionParam) ? seccionParam : 'produccion';
+  const [seccion, setSeccion] = useState(seccionInicial);
   const [datos, setDatos] = useState(null);
   const [filtroProd, setFiltroProd] = useState({ desde: haceDias(30), hasta: hoyISO(), finca: '' });
   const [filtroFito, setFiltroFito] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
   const [filtroICA, setFiltroICA] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
   const [filtroGG, setFiltroGG] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
+
+  function cambiarSeccion(id) {
+    setSeccion(id);
+    const params = new URLSearchParams(searchParams);
+    if (SECCIONES.some((s) => s.id === id)) {
+      params.set('seccion', id);
+    } else {
+      params.delete('seccion');
+    }
+    setSearchParams(params, { replace: true });
+  }
 
   useEffect(() => {
     Promise.allSettled([
@@ -1355,8 +1594,9 @@ function Reportes() {
       qrCajasApi.listar(),
       usuariosApi.listar(),
       asignacionesApi.listar(),
-      agroquimicosApi.listar()
-    ]).then(([f, l, a, e, o, q, u, as, ag]) =>
+      agroquimicosApi.listar(),
+      reportesApi.listar()
+    ]).then(([f, l, a, e, o, q, u, as, ag, r]) =>
       setDatos({
         fincas: f.status === 'fulfilled' ? (f.value.fincas || []) : [],
         lotes: l.status === 'fulfilled' ? (l.value.lotes || []) : [],
@@ -1366,7 +1606,8 @@ function Reportes() {
         qrs: q.status === 'fulfilled' ? (q.value.codigos || []) : [],
         usuarios: u.status === 'fulfilled' ? (u.value.usuarios || []) : [],
         asignaciones: as.status === 'fulfilled' ? (as.value.asignaciones || []) : [],
-        agroquimicos: ag.status === 'fulfilled' ? (ag.value.agroquimicos || []) : []
+        agroquimicos: ag.status === 'fulfilled' ? (ag.value.agroquimicos || []) : [],
+        reportes: r.status === 'fulfilled' ? (r.value.reportes || []) : []
       })
     );
   }, []);
@@ -1378,7 +1619,7 @@ function Reportes() {
           <button
             key={s.id}
             className={`rep-tab ${seccion === s.id ? 'active' : ''}`}
-            onClick={() => setSeccion(s.id)}
+            onClick={() => cambiarSeccion(s.id)}
           >
             {s.titulo}
           </button>
@@ -1419,7 +1660,8 @@ function Reportes() {
           fincas={datos?.fincas || []}
         />
       )}
-      {seccion === 'historial' && <HistorialReportes />}
+      {seccion === 'actividad' && <ActividadReciente datos={datos || {}} fincas={datos?.fincas || []} />}
+      {seccion === 'historial' && <HistorialReportes fincas={datos?.fincas || []} />}
     </AppLayout>
   );
 }
