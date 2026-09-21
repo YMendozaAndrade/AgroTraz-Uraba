@@ -9,6 +9,7 @@ import {
   qrCajasApi,
   usuariosApi,
   asignacionesApi,
+  agroquimicosApi,
   reportesApi
 } from '../services/api';
 import { fechaLocal, hoyLocal } from '../utils/fecha';
@@ -18,6 +19,8 @@ const SECCIONES = [
   { id: 'fitosanitario', titulo: 'Fitosanitario' },
   { id: 'trazabilidad', titulo: 'Trazabilidad' },
   { id: 'inventario', titulo: 'Inventario campesino' },
+  { id: 'ica', titulo: 'ICA · Aplicaciones' },
+  { id: 'globalgap', titulo: 'GlobalG.A.P.' },
   { id: 'historial', titulo: 'Historial' }
 ];
 
@@ -47,7 +50,9 @@ const TIPO_REPORTE_LABEL = {
   produccion: 'Producción',
   fitosanitario: 'Fitosanitario',
   trazabilidad: 'Trazabilidad',
-  inventario: 'Inventario campesino'
+  inventario: 'Inventario campesino',
+  ica_aplicaciones: 'ICA · Registro de aplicaciones',
+  globalgap_trazabilidad: 'GlobalG.A.P. · Trazabilidad'
 };
 
 function hoyISO() {
@@ -888,6 +893,296 @@ function ReporteInventario({ datos }) {
   );
 }
 
+function BloquePredio({ finca }) {
+  if (!finca) return null;
+  return (
+    <Fragment>
+      <h3 className="rep-seccion">Datos del predio</h3>
+      <div className="table-responsive">
+        <table className="rep-tabla">
+          <tbody>
+            <tr><th>Predio</th><td>{finca.nombre}</td><th>Código ICA</th><td>{finca.codigo_ica || '—'}</td></tr>
+            <tr><th>Municipio</th><td>{finca.municipio || '—'}</td><th>Departamento</th><td>{finca.departamento || '—'}</td></tr>
+            <tr><th>Área (ha)</th><td>{finca.area_hectareas ?? '—'}</td><th>Responsable</th><td>{finca.encargado_responsable || '—'}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </Fragment>
+  );
+}
+
+function ReporteICA({ datos, filtros, setFiltros, fincas }) {
+  const enRango = (f) => {
+    const fc = fechaCorta(f);
+    if (!fc) return false;
+    if (filtros.desde && fc < filtros.desde) return false;
+    if (filtros.hasta && fc > filtros.hasta) return false;
+    return true;
+  };
+
+  const catalogo = Object.fromEntries((datos.agroquimicos || []).map((q) => [q.id_agroquimico, q]));
+  const apps = (datos.aplicaciones || [])
+    .filter((a) => enRango(a.fecha_aplicacion))
+    .filter((a) => {
+      if (!filtros.finca) return true;
+      const lote = (datos.lotes || []).find((l) => l.id_lote === a.id_lote);
+      return lote ? String(lote.id_finca) === filtros.finca : true;
+    })
+    .sort((x, y) => String(x.fecha_aplicacion).localeCompare(String(y.fecha_aplicacion)));
+
+  const predio = filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || null) : null;
+  const conCarencia = apps.filter((a) => a.fecha_fin_carencia && fechaCorta(a.fecha_fin_carencia) >= hoyISO()).length;
+
+  const titulo = `ICA · Registro de aplicaciones fitosanitarias${filtros.desde ? ` (${fechaLegible(filtros.desde)} - ${fechaLegible(filtros.hasta)})` : ''}`;
+
+  const tablasICA = [
+    {
+      titulo: 'Aplicaciones del período',
+      columnas: ['N.º', 'Fecha', 'Predio/Lote', 'Cultivo', 'Producto', 'I.A.', 'Reg. ICA', 'Dosis', 'Carencia (días)', 'Fin carencia', 'Registró'],
+      filas: apps.map((a, i) => {
+        const q = catalogo[a.id_agroquimico] || {};
+        const lote = (datos.lotes || []).find((l) => l.id_lote === a.id_lote) || {};
+        return [
+          i + 1,
+          fechaCorta(a.fecha_aplicacion),
+          `${a.finca} / ${a.lote}`,
+          lote.tipo_siembra || '—',
+          a.agroquimico,
+          q.ingrediente_activo || '—',
+          a.registro_ica || q.registro_ica || '—',
+          a.dosis_aplicada ?? '—',
+          q.dias_carencia ?? a.dias_carencia ?? '—',
+          fechaCorta(a.fecha_fin_carencia),
+          a.registrado_por || '—'
+        ];
+      })
+    }
+  ];
+
+  return (
+    <Fragment>
+      <FiltrosReporte
+        filtros={filtros}
+        setFiltros={setFiltros}
+        fincas={fincas}
+        filtroFinca={filtros.finca}
+        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
+      />
+      <div className="page-head no-print">
+        <div>
+          <h2>ICA · Registro de aplicaciones</h2>
+          <p className="rep-sub">
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {predio ? predio.nombre : 'Todos los predios'}
+          </p>
+        </div>
+        <div className="page-head-acciones">
+          <BotonGuardar
+            tipo="ica_aplicaciones"
+            titulo={titulo}
+            desde={filtros.desde}
+            hasta={filtros.hasta}
+            idFinca={filtros.finca}
+            resumen={[
+              { label: 'Aplicaciones', valor: apps.length },
+              { label: 'Con carencia vigente', valor: conCarencia },
+              { label: 'Predio', valor: predio ? predio.codigo_ica || predio.nombre : 'Todos' }
+            ]}
+            tablas={tablasICA}
+          />
+          <button className="btn-primary" onClick={() => window.print()}>
+            Imprimir / Guardar PDF
+          </button>
+        </div>
+      </div>
+      <Reporte titulo={titulo}>
+        <p className="rep-dim">Formato de registro de aplicaciones fitosanitarias por predio registrado ICA: producto, ingrediente activo, registro ICA, dosis y período de carencia.</p>
+        <BloquePredio finca={predio} />
+        <Resumen
+          items={[
+            { label: 'Aplicaciones', valor: apps.length },
+            { label: 'Con carencia vigente', valor: conCarencia }
+          ]}
+        />
+        <h3 className="rep-seccion">Aplicaciones del período</h3>
+        {apps.length === 0 ? (
+          <p className="rep-vacio">No hay aplicaciones en el período.</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="rep-tabla">
+              <thead>
+                <tr>
+                  <th>N.º</th>
+                  <th>Fecha</th>
+                  <th>Predio / Lote</th>
+                  <th>Cultivo</th>
+                  <th>Producto</th>
+                  <th>I.A.</th>
+                  <th>Reg. ICA</th>
+                  <th>Dosis</th>
+                  <th>Carencia (días)</th>
+                  <th>Fin carencia</th>
+                  <th>Registró</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tablasICA[0].filas.map((f, i) => (
+                  <tr key={i}>
+                    {f.map((v, j) => <td key={j}>{v}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Reporte>
+    </Fragment>
+  );
+}
+
+function ReporteGlobalGAP({ datos, filtros, setFiltros, fincas }) {
+  const enRango = (f) => {
+    const fc = fechaCorta(f);
+    if (!fc) return false;
+    if (filtros.desde && fc < filtros.desde) return false;
+    if (filtros.hasta && fc > filtros.hasta) return false;
+    return true;
+  };
+
+  const qrs = (datos.qrs || [])
+    .filter((q) => enRango(q.fecha_proceso))
+    .filter((q) => {
+      if (!filtros.finca) return true;
+      const lote = (datos.lotes || []).find((l) => l.id_lote === q.id_lote);
+      return lote ? String(lote.id_finca) === filtros.finca : true;
+    })
+    .sort((x, y) => String(x.fecha_proceso).localeCompare(String(y.fecha_proceso)));
+
+  const appsPorLote = {};
+  (datos.aplicaciones || []).forEach((a) => {
+    (appsPorLote[a.id_lote] = appsPorLote[a.id_lote] || []).push(a);
+  });
+
+  function cumplimiento(q) {
+    const fp = fechaCorta(q.fecha_proceso);
+    const apps = appsPorLote[q.id_lote] || [];
+    const enCarencia = apps.filter((a) => {
+      const ini = fechaCorta(a.fecha_aplicacion);
+      const fin = fechaCorta(a.fecha_fin_carencia);
+      return ini && fin && fp >= ini && fp <= fin;
+    });
+    return enCarencia.length === 0
+      ? 'CUMPLE'
+      : `NO CUMPLE (carencia hasta ${fechaCorta(enCarencia[0].fecha_fin_carencia)} · ${enCarencia[0].agroquimico})`;
+  }
+
+  const filas = qrs.map((q) => ({ ...q, estado_carencia: cumplimiento(q) }));
+  const cumplen = filas.filter((f) => f.estado_carencia === 'CUMPLE').length;
+  const pesoTotal = filas.reduce((s, f) => s + (Number(f.peso_neto) || 0), 0);
+  const cajasTotal = filas.reduce((s, f) => s + (Number(f.total_cajas) || 0), 0);
+
+  const evals = (datos.evaluaciones || []).filter((e) => enRango(e.fecha_evaluacion));
+
+  const predio = filtros.finca ? (fincas.find((f) => String(f.id_finca) === filtros.finca) || null) : null;
+  const titulo = `GlobalG.A.P. · Trazabilidad Lote-a-Caja${filtros.desde ? ` (${fechaLegible(filtros.desde)} - ${fechaLegible(filtros.hasta)})` : ''}`;
+
+  const tablasGG = [
+    {
+      titulo: 'Cosecha y empaque trazable',
+      columnas: ['Código QR', 'Lote', 'Finca', 'Fecha proceso', 'Peso neto (kg)', 'Cajas', 'Carencia al procesar'],
+      filas: filas.map((f) => [f.codigo, f.lote, f.finca, fechaCorta(f.fecha_proceso), f.peso_neto, f.total_cajas, f.estado_carencia])
+    }
+  ];
+
+  return (
+    <Fragment>
+      <FiltrosReporte
+        filtros={filtros}
+        setFiltros={setFiltros}
+        fincas={fincas}
+        filtroFinca={filtros.finca}
+        setFiltroFinca={(v) => setFiltros({ ...filtros, finca: v })}
+      />
+      <div className="page-head no-print">
+        <div>
+          <h2>GlobalG.A.P. · Trazabilidad</h2>
+          <p className="rep-sub">
+            {filtros.desde ? `Desde ${fechaLegible(filtros.desde)} hasta ${fechaLegible(filtros.hasta)}` : 'Rango completo'} · {predio ? predio.nombre : 'Todos los predios'}
+          </p>
+        </div>
+        <div className="page-head-acciones">
+          <BotonGuardar
+            tipo="globalgap_trazabilidad"
+            titulo={titulo}
+            desde={filtros.desde}
+            hasta={filtros.hasta}
+            idFinca={filtros.finca}
+            resumen={[
+              { label: 'Lotes trazados (QR)', valor: filas.length },
+              { label: 'Cumplen carencia', valor: cumplen },
+              { label: 'Peso neto (kg)', valor: pesoTotal.toFixed(2) },
+              { label: 'Cajas', valor: cajasTotal }
+            ]}
+            tablas={tablasGG}
+          />
+          <button className="btn-primary" onClick={() => window.print()}>
+            Imprimir / Guardar PDF
+          </button>
+        </div>
+      </div>
+      <Reporte titulo={titulo}>
+        <p className="rep-dim">Trazabilidad Lote-a-Caja con verificación de respeto del período de carencia al momento del proceso/empaque y monitoreo fitosanitario del período.</p>
+        <BloquePredio finca={predio} />
+        <Resumen
+          items={[
+            { label: 'Lotes trazados (QR)', valor: filas.length },
+            { label: 'Cumplen carencia', valor: cumplen },
+            { label: 'Peso neto (kg)', valor: pesoTotal.toFixed(2) },
+            { label: 'Cajas', valor: cajasTotal },
+            { label: 'Evaluaciones en período', valor: evals.length }
+          ]}
+        />
+        <h3 className="rep-seccion">Cosecha y empaque trazable</h3>
+        {filas.length === 0 ? (
+          <p className="rep-vacio">No hay empaques trazados en el período.</p>
+        ) : (
+          <div className="table-responsive">
+            <table className="rep-tabla">
+              <thead>
+                <tr>
+                  <th>Código QR</th>
+                  <th>Lote</th>
+                  <th>Finca</th>
+                  <th>Fecha proceso</th>
+                  <th>Peso neto (kg)</th>
+                  <th>Cajas</th>
+                  <th>Carencia al procesar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.map((f) => (
+                  <tr key={f.id_qr}>
+                    <td><b>{f.codigo}</b></td>
+                    <td>{f.lote}</td>
+                    <td>{f.finca}</td>
+                    <td>{fechaCorta(f.fecha_proceso)}</td>
+                    <td>{f.peso_neto}</td>
+                    <td>{f.total_cajas}</td>
+                    <td>
+                      <span className={`badge ${f.estado_carencia === 'CUMPLE' ? 'badge-disponible' : 'badge-cuarentena'}`}>
+                        {f.estado_carencia}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Reporte>
+    </Fragment>
+  );
+}
+
 function FiltrosReporte({ filtros, setFiltros, fincas, filtroFinca, setFiltroFinca }) {
   return (
     <div className="dash-filtros no-print">
@@ -1047,6 +1342,8 @@ function Reportes() {
   const [datos, setDatos] = useState(null);
   const [filtroProd, setFiltroProd] = useState({ desde: haceDias(30), hasta: hoyISO(), finca: '' });
   const [filtroFito, setFiltroFito] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
+  const [filtroICA, setFiltroICA] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
+  const [filtroGG, setFiltroGG] = useState({ desde: haceDias(90), hasta: hoyISO(), finca: '' });
 
   useEffect(() => {
     Promise.allSettled([
@@ -1057,8 +1354,9 @@ function Reportes() {
       ordenesCorteApi.listar(),
       qrCajasApi.listar(),
       usuariosApi.listar(),
-      asignacionesApi.listar()
-    ]).then(([f, l, a, e, o, q, u, as]) =>
+      asignacionesApi.listar(),
+      agroquimicosApi.listar()
+    ]).then(([f, l, a, e, o, q, u, as, ag]) =>
       setDatos({
         fincas: f.status === 'fulfilled' ? (f.value.fincas || []) : [],
         lotes: l.status === 'fulfilled' ? (l.value.lotes || []) : [],
@@ -1067,7 +1365,8 @@ function Reportes() {
         ordenes: o.status === 'fulfilled' ? (o.value.ordenes || []) : [],
         qrs: q.status === 'fulfilled' ? (q.value.codigos || []) : [],
         usuarios: u.status === 'fulfilled' ? (u.value.usuarios || []) : [],
-        asignaciones: as.status === 'fulfilled' ? (as.value.asignaciones || []) : []
+        asignaciones: as.status === 'fulfilled' ? (as.value.asignaciones || []) : [],
+        agroquimicos: ag.status === 'fulfilled' ? (ag.value.agroquimicos || []) : []
       })
     );
   }, []);
@@ -1104,6 +1403,22 @@ function Reportes() {
       )}
       {seccion === 'trazabilidad' && <ReporteTrazabilidad datos={datos || {}} />}
       {seccion === 'inventario' && <ReporteInventario datos={datos || {}} />}
+      {seccion === 'ica' && (
+        <ReporteICA
+          datos={datos || {}}
+          filtros={filtroICA}
+          setFiltros={setFiltroICA}
+          fincas={datos?.fincas || []}
+        />
+      )}
+      {seccion === 'globalgap' && (
+        <ReporteGlobalGAP
+          datos={datos || {}}
+          filtros={filtroGG}
+          setFiltros={setFiltroGG}
+          fincas={datos?.fincas || []}
+        />
+      )}
       {seccion === 'historial' && <HistorialReportes />}
     </AppLayout>
   );

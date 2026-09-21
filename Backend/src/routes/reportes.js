@@ -82,7 +82,7 @@ router.post('/', rolesGestion, async (req, res) => {
     return res.status(400).json({ status: 'error', message: 'tipo_reporte y titulo son obligatorios' });
   }
 
-  const tiposValidos = ['produccion', 'fitosanitario', 'trazabilidad', 'inventario'];
+  const tiposValidos = ['produccion', 'fitosanitario', 'trazabilidad', 'inventario', 'ica_aplicaciones', 'globalgap_trazabilidad'];
   if (!tiposValidos.includes(tipo_reporte)) {
     return res.status(400).json({ status: 'error', message: 'tipo_reporte inválido' });
   }
