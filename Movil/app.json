@@ -12,9 +12,10 @@
     "android": {
       "package": "com.agrotraz.campo",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "CAMERA"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#1d3b2a",
@@ -40,6 +41,12 @@
           "photosPermission": "AgroTraz usa la cámara para fotografiar los síntomas en campo."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8b4b7045-b2ba-48a8-95ae-9cff62a44d49"
+      }
+    },
+    "owner": "paula001s-team"
   }
 }
